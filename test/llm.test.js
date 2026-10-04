@@ -26,8 +26,22 @@ test('throws QuotaError (no stalling) when the fallback model is also out of dai
 });
 
 test('a truncated response is retried with more room', async () => {
+  const { callJSON: cj } = await import('../lib/llm.js?fresh=' + Math.random()); // isolated from quota state left by earlier tests
   const sizes = [];
   globalThis.fetch = async (_u, init) => { sizes.push(JSON.parse(init.body).max_tokens); return sizes.length === 1 ? new Response(JSON.stringify({ choices: [{ message: { content: '{"a":' }, finish_reason: 'length' }], usage: {} }), { status: 200 }) : ok('{"a":2}'); };
-  const out = await callJSON({ system: 's', user: 'u', schema: {}, name: 'x', max_tokens: 1000, tier: 'fast' });
+  const out = await cj({ system: 's', user: 'u', schema: {}, name: 'x', max_tokens: 1000, tier: 'fast' });
   assert.deepEqual(out, { a: 2 }); assert.ok(sizes[1] > sizes[0]);
+});
+
+test('after a daily-quota rejection the exhausted model is skipped without another request, and the rejection no longer reserves tokens', async () => {
+  // fresh module instance so the blocked-model memory from earlier tests doesn't interfere
+  const { callJSON: cj } = await import('../lib/llm.js?fresh=' + Math.random());
+  const seen = [];
+  globalThis.fetch = async (_u, init) => { const m = JSON.parse(init.body).model; seen.push(m); return m.includes('120b') ? tpd() : ok('{"ok":true}'); };
+  await cj({ system: 's', user: 'u'.repeat(9000), schema: {}, name: 'evaluate', max_tokens: 1800 });
+  const first = seen.length;
+  const t0 = Date.now();
+  await cj({ system: 's', user: 'u'.repeat(9000), schema: {}, name: 'evaluate', max_tokens: 1800 });
+  assert.equal(seen.slice(first).filter((m) => m.includes('120b')).length, 0, 'second call must not hit the exhausted model');
+  assert.ok(Date.now() - t0 < 1500, 'second call must not wait out a phantom token reservation');
 });
