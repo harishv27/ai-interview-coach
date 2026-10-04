@@ -6,7 +6,7 @@ on:
     inputs:
       runs:
         description: Runs per case (more = better variance estimate, slower)
-        default: '1'
+        default: '2'
   schedule:
     - cron: '0 6 * * 1' # Mondays 06:00 UTC
 permissions:
@@ -26,7 +26,9 @@ jobs:
       - run: npm ci
       - run: npm test
       - name: Run eval
-        run: npm run eval -- --runs ${{ inputs.runs || 1 }}
+        id: eval
+        continue-on-error: true # still publish + commit results when the quality gate fails
+        run: npm run eval -- --runs ${{ inputs.runs || 2 }} --gate
       - name: Regenerate performance report
         run: npm run report
       - name: Publish run summary
@@ -47,3 +49,8 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add eval/results docs/PERFORMANCE.md README.md
           git diff --cached --quiet || (git commit -m "chore: update eval results [skip ci]" && git push)
+      - name: Fail the job if the quality gate failed
+        if: steps.eval.outcome == 'failure'
+        run: |
+          echo "::error::Eval quality gate failed — see the run summary"
+          exit 1

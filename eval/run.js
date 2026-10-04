@@ -99,6 +99,14 @@ if (metas.length) {
   lines.push(`## 4. Performance`, ``, `- Latency per answer: p50 **${(summary.latencyP50 / 1000).toFixed(1)}s**, p95 **${(summary.latencyP95 / 1000).toFixed(1)}s** (n=${metas.length})`, `- Tokens per answer: **${summary.avgTokens}** (${Math.round(mean(metas.map((m) => m.promptTokens)))} in / ${Math.round(mean(metas.map((m) => m.completionTokens)))} out) over ${summary.avgCalls} model calls`, ``);
 }
 summary.errors = errored.length;
+// Quality gate (use --gate in CI): fail the run if quality regresses below targets.
+const gateReasons = [];
+if (summary.adv && summary.adv[0] / summary.adv[1] < 0.85) gateReasons.push(`failure-mode pass rate ${summary.adv.join('/')} < 85%`);
+if (summary.mae != null && summary.mae > 0.8) gateReasons.push(`MAE ${summary.mae.toFixed(2)} > 0.80`);
+if (summary.within1 != null && summary.within1 < 0.85) gateReasons.push(`within-±1 ${Math.round(summary.within1 * 100)}% < 85%`);
+if (summary.errors) gateReasons.push(`${summary.errors} case(s) errored`);
+summary.gate = gateReasons.length ? 'fail' : 'pass';
+lines.push(`## 5. Quality gate: ${gateReasons.length ? '❌ FAIL' : '✅ pass'}`, ``, ...(gateReasons.length ? gateReasons.map((r) => `- ${r}`) : ['- all thresholds met (bias is reported but not gating)']), ``);
 summary.flags = flagCounts;
 const report = lines.join('\n');
 fs.mkdirSync(path.join(dir, 'results'), { recursive: true });
@@ -108,3 +116,4 @@ fs.writeFileSync(path.join(dir, 'results', `${stamp}.raw.json`), JSON.stringify(
 // ---- Append to the run history (read by scripts/report.js -> docs/PERFORMANCE.md)
 fs.appendFileSync(path.join(dir, 'results', 'history.jsonl'), JSON.stringify({ date: new Date().toISOString(), model: MODEL(), runsPerCase: RUNS, cases: cases.length, source: process.env.GITHUB_ACTIONS ? 'github-actions' : 'local', ...summary }) + '\n');
 console.log(report);
+if (process.argv.includes('--gate') && gateReasons.length) { console.error('GATE FAILED: ' + gateReasons.join('; ')); process.exit(1); }

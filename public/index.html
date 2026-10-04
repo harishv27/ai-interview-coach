@@ -173,6 +173,17 @@
   ul.clean { margin:0; padding-left:20px; } ul.clean li { margin:6px 0; }
   details.t summary { cursor:pointer; font-weight:600; }
   .toast { position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:var(--ink); color:var(--bg); padding:10px 18px; border-radius:99px; font-size:14px; z-index:9; animation:rise .25s; }
+  .consent { display:flex; gap:10px; align-items:flex-start; font-size:13.5px; color:var(--mute); margin-top:16px; cursor:pointer; }
+  .consent input { margin-top:3px; width:18px; height:18px; flex:none; accent-color:var(--brand); }
+  .consent a { color:var(--brand); }
+  .hist { margin-bottom:16px; } .spark { width:100%; height:auto; max-height:84px; margin:8px 0 4px; }
+  .hrow { display:flex; justify-content:space-between; font-size:14px; padding:7px 0; border-top:1px solid var(--line); }
+  .dchips { display:flex; gap:8px; flex-wrap:wrap; margin-top:16px; }
+  .dchips span { font-size:13px; padding:5px 11px; border-radius:99px; background:var(--soft); color:var(--mute); } .dchips b { color:var(--ink); }
+  .gapcard { border-left:4px solid var(--warn); padding:16px 18px; } .gapcard ul { margin-top:6px; }
+  .delta { font-size:12px; font-weight:700; padding:3px 10px; border-radius:99px; } .delta.up { color:var(--good); background:color-mix(in srgb,var(--good) 14%,transparent); } .delta.down { color:var(--bad); background:color-mix(in srgb,var(--bad) 14%,transparent); } .delta.flat { color:var(--mute); background:var(--soft); }
+  .optrow { display:grid; grid-template-columns:1fr 1fr; gap:16px; } @media (max-width:560px){ .optrow { grid-template-columns:1fr; } }
+  .seg.wrap { flex-wrap:wrap; } .seg button { white-space:nowrap; }
   @media (prefers-reduced-motion:reduce){ *{ animation:none !important; transition:none !important; } }
 </style>
 </head>
@@ -195,6 +206,7 @@
     <p class="lead">Upload your resume, paste the job, and get a tailored mock interview with scored feedback — every point backed by your own words.</p>
     <div class="perks"><span>🎯 Tailored questions</span><span>🗣 Voice or text</span><span>📏 5-criteria rubric</span><span>🔍 Quotes your exact words</span><span>🛡 Flags uncertain feedback</span></div>
 
+    <div id="history"></div>
     <div class="card">
       <div class="row"><h2>Your interview</h2><span class="spacer"></span><button class="link" id="sample" type="button">✨ Try with sample data</button></div>
 
@@ -224,9 +236,14 @@
         </div>
       </div>
 
+      <div class="optrow">
+        <div class="field"><div class="lab"><span>Focus</span></div><div class="seg wrap" id="mode" role="group" aria-label="Interview focus"><button type="button" data-v="mixed" class="on">Mixed</button><button type="button" data-v="behavioural">Behavioural</button><button type="button" data-v="technical">Technical</button><button type="button" data-v="case">Case</button></div></div>
+        <div class="field"><div class="lab"><span>Difficulty</span></div><div class="seg" id="level" role="group" aria-label="Difficulty"><button type="button" data-v="standard" class="on">Standard</button><button type="button" data-v="tough">Tough</button></div></div>
+      </div>
+
       <label class="switch"><input id="voice" type="checkbox"><div><b>🎙 Voice mode</b><span class="hint">The coach speaks each question; you answer out loud. Works best in Chrome, Edge or Safari.</span></div></label>
 
-      <p class="hint" style="margin:16px 0 0">🔒 Your resume and answers are sent to an AI model to generate feedback. Avoid sensitive details like ID numbers.</p>
+      <label class="consent"><input id="consent" type="checkbox"><span>I understand my resume text and answers are sent to an AI service to generate feedback. Emails, phone numbers and links are removed first. <a href="/privacy.html" target="_blank" rel="noopener">Privacy details</a></span></label>
       <button id="startBtn" class="primary big">Start mock interview →</button>
       <div id="setupErr" class="err" role="alert"></div>
     </div>
@@ -234,6 +251,7 @@
 
   <!-- INTERVIEW -->
   <section id="interview" class="hidden">
+    <div id="gaps"></div>
     <div class="card">
       <div class="dots" id="dots" aria-hidden="true"></div>
       <div class="qmeta"><span id="progress"></span><span class="badge" id="qtype"></span><span class="spacer"></span><span id="speaking" class="hidden"><span class="speak"><i></i><i></i><i></i></span>Speaking…</span><button id="replay" class="link hidden">🔊 Replay</button></div>
@@ -265,7 +283,7 @@
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const store = { get(k) { try { return localStorage.getItem(k) || ''; } catch { return ''; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
-const S = { criteria: [], questions: [], idx: 0, turns: [], sessionId: crypto.randomUUID(), current: null, voice: false, inputMode: 'text', count: 5, t0: 0, timer: null };
+const S = { criteria: [], questions: [], idx: 0, turns: [], sessionId: crypto.randomUUID(), current: null, voice: false, inputMode: 'text', count: 5, t0: 0, timer: null, mode: 'mixed', level: 'standard', gaps: [] };
 const tone = (n) => (n >= 3.5 ? 'good' : n >= 2.5 ? 'warn' : 'bad');
 const label = (n) => (n >= 4.5 ? 'Excellent' : n >= 3.5 ? 'Strong' : n >= 2.5 ? 'Getting there' : n >= 1.8 ? 'Needs work' : 'Weak');
 const words = (t) => (t.trim().match(/\S+/g) || []).length;
@@ -305,6 +323,24 @@ function saveDraft() { store.set('draft', JSON.stringify({ resume: $('resume').v
 try { const d = JSON.parse(store.get('draft') || '{}'); $('resume').value = d.resume || ''; $('jd').value = d.jd || ''; $('role').value = d.role || ''; } catch {}
 ['resume', 'jd', 'role'].forEach((id) => $(id).addEventListener('input', saveDraft)); counts();
 
+for (const id of ['mode', 'level']) $(id).onclick = (e) => { const b = e.target.closest('button'); if (!b) return; S[id] = b.dataset.v; [...$(id).children].forEach((x) => x.classList.toggle('on', x === b)); };
+$('consent').checked = store.get('consent') === '1';
+$('consent').onchange = () => store.set('consent', $('consent').checked ? '1' : '0');
+
+function renderHistory() {
+  let h = []; try { h = JSON.parse(store.get('history') || '[]'); } catch {}
+  const el = $('history'); if (!h.length) { el.innerHTML = ''; return; }
+  const W = 300, H = 56, pts = h.map((x) => x.overall);
+  const xy = pts.map((v, i) => [pts.length === 1 ? W / 2 : (i * (W - 12)) / (pts.length - 1) + 6, H - 8 - ((v - 1) / 4) * (H - 16)]);
+  const trend = pts.length > 1 ? pts.at(-1) - pts[0] : 0;
+  el.innerHTML = `<div class="card hist"><div class="row"><h2>Your progress</h2><span class="spacer"></span><span class="hint">${h.length} session${h.length > 1 ? 's' : ''}${pts.length > 1 ? ` · ${trend >= 0 ? '▲ +' : '▼ '}${trend.toFixed(1)} since first` : ''}</span></div>
+    <svg class="spark" viewBox="0 0 ${W} ${H}" aria-label="Score trend"><polyline fill="none" stroke="var(--brand)" stroke-width="2.5" stroke-linejoin="round" points="${xy.map((q) => q.join(',')).join(' ')}"/>${xy.map((q) => `<circle cx="${q[0]}" cy="${q[1]}" r="3.5" fill="var(--brand)"/>`).join('')}</svg>
+    ${h.slice(-3).reverse().map((x) => `<div class="hrow"><span>${new Date(x.d).toLocaleDateString()} · ${esc(x.role)}</span><b>${x.overall}</b></div>`).join('')}
+    <div class="row" style="margin-top:8px"><span class="hint">Saved only in this browser.</span><span class="spacer"></span><button class="link" id="wipe" type="button">🗑 Delete my data</button></div></div>`;
+  $('wipe').onclick = () => { if (confirm('Delete your saved draft, progress history and consent from this browser?')) { ['draft', 'history', 'consent'].forEach((k) => { try { localStorage.removeItem(k); } catch {} }); location.reload(); } };
+}
+renderHistory();
+
 $('count').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; S.count = +b.dataset.n; [...$('count').children].forEach((x) => x.classList.toggle('on', x === b)); counts(); };
 
 async function uploadResume(f) {
@@ -334,11 +370,13 @@ $('startBtn').onclick = async () => {
   const resume = $('resume').value.trim(), jd = $('jd').value.trim(), role = $('role').value.trim();
   const missing = [!resume && 'resume', !jd && 'job description', !role && 'target role'].filter(Boolean);
   if (missing.length) { $('setupErr').textContent = 'Still needed: ' + missing.join(', ') + '.'; return; }
+  if (!$('consent').checked) { $('setupErr').textContent = 'Please tick the consent box so we can send your text to the AI service.'; return; }
   Object.assign(S, { role, resume, jd, voice: $('voice').checked });
   const b = $('startBtn'); b.disabled = true; b.innerHTML = '<span class="spinner" style="display:inline-block;vertical-align:-4px;margin-right:10px;border-top-color:#fff"></span>Designing your interview…'; $('setupErr').textContent = '';
   try {
-    const { questions } = await api('/api/start', { resume, jd, role, count: S.count });
-    Object.assign(S, { questions, idx: 0, turns: [] });
+    const { questions, gaps } = await api('/api/start', { resume, jd, role, count: S.count, mode: S.mode, difficulty: S.level });
+    Object.assign(S, { questions, gaps: gaps || [], idx: 0, turns: [] });
+    $('gaps').innerHTML = S.gaps.length ? `<div class="card gapcard"><b>Heads-up — likely tough spots</b><div class="hint">The job asks for things your resume doesn’t clearly show. Expect probing on:</div><ul class="clean">${S.gaps.map((g) => `<li>${esc(g)}</li>`).join('')}</ul></div>` : '';
     $('setup').classList.add('hidden'); $('interview').classList.remove('hidden'); step(2);
     if (S.voice) setupMic(); else $('mic').classList.add('hidden');
     $('replay').classList.toggle('hidden', !S.voice); $('kbd').classList.remove('hidden');
@@ -379,11 +417,12 @@ function tick() { const s = Math.floor((Date.now() - S.t0) / 1000); $('counter')
 $('answer').addEventListener('input', () => { tick(); $('ansErr').textContent = ''; });
 $('answer').addEventListener('keydown', (e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') $('submit').click(); });
 
-function ask(question, type, isFollowUp, why) {
-  S.current = { question, isFollowUp }; S.inputMode = 'text';
+function ask(question, type, isFollowUp, why, attempt = 1) {
+  S.current = { question, type, why, isFollowUp, attempt, qkey: `${S.idx}${isFollowUp ? 'f' : ''}` }; S.inputMode = 'text';
+  $('gaps').classList.toggle('hidden', S.idx > 0 || isFollowUp || attempt > 1);
   const n = S.questions.length;
   $('dots').innerHTML = S.questions.map((_, i) => `<i class="${i < S.idx ? 'done' : i === S.idx ? 'cur' : ''}"></i>`).join('');
-  $('progress').textContent = `Question ${S.idx + 1} of ${n}`;
+  $('progress').textContent = `Question ${S.idx + 1} of ${n}${attempt > 1 ? ` · attempt ${attempt}` : ''}`;
   $('qtype').textContent = isFollowUp ? 'Follow-up' : type; $('qtype').classList.toggle('fu', isFollowUp);
   $('question').textContent = question; $('why').textContent = why ? `Why this question: ${why}` : '';
   $('tip').classList.toggle('hidden', isFollowUp);
@@ -399,13 +438,14 @@ $('submit').onclick = async () => {
   if (recOn) rec.stop(); stopSpeak();
   const answer = $('answer').value.trim();
   if (!answer) { $('ansErr').textContent = 'Give an answer first — even a rough one.'; return; }
+  const seconds = Math.round((Date.now() - S.t0) / 1000);
   clearInterval(S.timer); $('submit').disabled = true; $('answer').disabled = true;
   let i = 0; $('feedback').innerHTML = `<div class="card"><div class="loading"><div class="spinner"></div><span id="stage">${STAGES[0]}</span></div><div class="skel" style="width:70%"></div><div class="skel"></div><div class="skel" style="width:85%"></div></div>`;
   $('feedback').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   const iv = setInterval(() => { const s = $('stage'); if (s) s.textContent = STAGES[Math.min(++i, STAGES.length - 1)]; }, 3500);
   try {
-    const { evaluation, flags } = await api('/api/answer', { resume: S.resume, jd: S.jd, role: S.role, question: S.current.question, answer, isFollowUp: S.current.isFollowUp, sessionId: S.sessionId, inputMode: S.inputMode });
-    const turn = { question: S.current.question, answer, isFollowUp: S.current.isFollowUp, evaluation, flags }; S.turns.push(turn); renderFeedback(turn);
+    const { evaluation, flags, delivery } = await api('/api/answer', { resume: S.resume, jd: S.jd, role: S.role, question: S.current.question, answer, isFollowUp: S.current.isFollowUp, sessionId: S.sessionId, inputMode: S.inputMode, seconds, attempt: S.current.attempt });
+    const turn = { question: S.current.question, answer, isFollowUp: S.current.isFollowUp, evaluation, flags, delivery, qkey: S.current.qkey, attempt: S.current.attempt, cur: S.current }; S.turns.push(turn); renderFeedback(turn);
   } catch (e) { $('feedback').innerHTML = ''; $('ansErr').textContent = e.message + ' — your answer is still here, try again.'; $('submit').disabled = false; $('answer').disabled = false; }
   clearInterval(iv);
 };
@@ -424,10 +464,14 @@ function renderFeedback(t) {
   const cl = (k) => S.criteria.find((c) => c.key === k)?.label || k;
   const evs = (arr, cls, title) => arr.length ? `<h3>${title}</h3>` + arr.map((x) => `<div class="ev ${cls}"><div class="c">${esc(cl(x.criterion))}</div><p>${esc(x.comment)}</p><q>${esc(x.quote)}</q></div>`).join('') : '';
   const notes = [...t.flags.map((f) => f.detail), ...ev.technical_claims_to_verify.map((c) => `Double-check: “${c.quote}” — ${c.concern}`)];
+  const prev = S.turns.filter((x) => x.qkey === t.qkey && x !== t).at(-1);
+  const dv = prev ? +(ev.overall - prev.evaluation.overall).toFixed(1) : null;
+  const delta = dv === null ? '' : `<span class="delta ${dv > 0 ? 'up' : dv < 0 ? 'down' : 'flat'}" title="Compared with your previous attempt at this question">${dv > 0 ? '▲ +' : dv < 0 ? '▼ ' : '＝ '}${dv} vs attempt ${t.attempt - 1}</span>`;
+  const d = t.delivery, dchips = d ? `<div class="dchips" title="${esc(d.paceNote || '')}"><span><b>${d.words}</b> words</span>${d.wpm ? `<span><b>${d.wpm}</b> wpm · ${d.pace} pace</span>` : ''}<span><b>${d.fillers.total}</b> filler word${d.fillers.total === 1 ? '' : 's'}${d.fillers.top.length ? ' (' + d.fillers.top.map((x) => esc(x.label) + ' ×' + x.n).join(', ') + ')' : ''}</span>${d.longestSentence > 40 ? `<span>Longest sentence <b>${d.longestSentence}</b> words — try shorter ones</span>` : ''}</div>` : '';
   const confTxt = { high: 'High confidence', medium: 'Medium confidence', low: 'Low confidence — treat with caution' }[ev.confidence];
   $('feedback').innerHTML = `<div class="card fb">
-    <div class="hero">${ring(ev.overall)}<div class="verdict"><span class="pill ${tone(ev.overall)}">${label(ev.overall)}</span> <span class="pill ${ev.confidence === 'high' ? 'good' : ev.confidence === 'medium' ? 'warn' : 'bad'}" title="How sure the coach is about these scores">${confTxt}</span><p>${esc(ev.summary)}</p></div></div>
-    ${bars((k) => ev.scores[k])}
+    <div class="hero">${ring(ev.overall)}<div class="verdict"><span class="pill ${tone(ev.overall)}">${label(ev.overall)}</span> <span class="pill ${ev.confidence === 'high' ? 'good' : ev.confidence === 'medium' ? 'warn' : 'bad'}" title="How sure the coach is about these scores">${confTxt}</span> ${delta}<p>${esc(ev.summary)}</p></div></div>
+    ${bars((k) => ev.scores[k])}${dchips}
     ${notes.length ? `<details class="notes" ${ev.confidence !== 'high' ? 'open' : ''}><summary>⚠️ ${notes.length} reliability note${notes.length > 1 ? 's' : ''} — read before trusting this</summary><ul>${notes.map((n) => `<li>${esc(n)}</li>`).join('')}</ul></details>` : ''}
     ${evs(ev.strengths, '', 'What worked')}${evs(ev.gaps, 'gap', 'What to improve')}
     <h3>A stronger version</h3>
@@ -437,7 +481,7 @@ function renderFeedback(t) {
     <h3>Was this feedback accurate?</h3>
     <div class="rate row" id="rate"><button data-r="accurate">👍 Accurate</button><button data-r="partly">🤔 Partly</button><button data-r="wrong">👎 Misleading</button></div>
     <input id="rateNote" type="text" class="hidden" placeholder="What was wrong or missing? (optional)" style="margin-top:10px">
-    <div class="sticky">${hasFollow ? '<button id="doFollow" class="primary">Answer follow-up →</button>' : ''}<button id="next" class="${hasFollow ? '' : 'primary'}">${last ? 'Finish & see debrief' : 'Next question →'}</button></div>
+    <div class="sticky"><button id="retry" title="Answer this question again and see if your score improves">↻ Try again</button>${hasFollow ? '<button id="doFollow" class="primary">Answer follow-up →</button>' : ''}<button id="next" class="${hasFollow ? '' : 'primary'}">${last ? 'Finish & see debrief' : 'Next question →'}</button></div>
   </div>`;
   const el = $('feedback'); animate(el); el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   if (S.voice) speak(ev.summary + (hasFollow ? ' Follow-up question: ' + ev.follow_up : ''));
@@ -446,32 +490,60 @@ function renderFeedback(t) {
     el.querySelectorAll('#rate button').forEach((x) => x.classList.remove('sel')); b.classList.add('sel'); $('rateNote').classList.remove('hidden');
     sendRating(t, b.dataset.r); $('rateNote').onchange = () => sendRating(t, b.dataset.r); toast('Thanks — this helps improve the coach');
   }));
+  $('retry').onclick = () => { stopSpeak(); const c = t.cur; ask(c.question, c.type, c.isFollowUp, c.why, c.attempt + 1); };
   if (hasFollow) $('doFollow').onclick = () => { stopSpeak(); ask(ev.follow_up, 'follow-up', true); };
   $('next').onclick = () => { stopSpeak(); if (last) finish(); else { S.idx++; askMain(); } };
 }
 const sendRating = (t, rating) => fetch('/api/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: S.sessionId, question: t.question, rating, note: $('rateNote')?.value || '' }) }).catch(() => {});
 
 /* ---------- Debrief ---------- */
+// Count each question once, using the best attempt (retries shouldn't be penalised).
+function bestTurns() {
+  const best = new Map();
+  for (const t of S.turns) { const b = best.get(t.qkey); if (!b || t.evaluation.overall > b.evaluation.overall) best.set(t.qkey, t); }
+  return [...best.values()];
+}
+function roundRect(g, x, y, w, h, r, fill) { g.beginPath(); g.roundRect ? g.roundRect(x, y, Math.max(w, 0.1), h, r) : g.rect(x, y, w, h); g.fillStyle = fill; g.fill(); }
+function scoreCard(overall, avgs) {
+  const c = document.createElement('canvas'); c.width = 1200; c.height = 630; const g = c.getContext('2d');
+  const grad = g.createLinearGradient(0, 0, 1200, 630); grad.addColorStop(0, '#4f46e5'); grad.addColorStop(1, '#7c3aed'); g.fillStyle = grad; g.fillRect(0, 0, 1200, 630);
+  g.fillStyle = '#fff'; g.font = '600 32px system-ui, sans-serif'; g.fillText('Mock interview · ' + S.role, 60, 84);
+  g.font = '800 190px system-ui, sans-serif'; g.fillText(overall.toFixed(1), 60, 340);
+  g.globalAlpha = .85; g.font = '500 38px system-ui, sans-serif'; g.fillText('out of 5 · ' + label(overall), 66, 404); g.globalAlpha = 1;
+  S.criteria.forEach((cr, k) => { const y = 168 + k * 74; g.fillStyle = '#fff'; g.font = '500 27px system-ui, sans-serif'; g.textAlign = 'left'; g.fillText(cr.label, 560, y);
+    roundRect(g, 560, y + 14, 540, 16, 8, 'rgba(255,255,255,.25)'); roundRect(g, 560, y + 14, (540 * avgs[cr.key]) / 5, 16, 8, '#fff');
+    g.fillStyle = '#fff'; g.font = '700 27px system-ui, sans-serif'; g.textAlign = 'right'; g.fillText(avgs[cr.key].toFixed(1), 1140, y); g.textAlign = 'left'; });
+  g.globalAlpha = .75; g.font = '500 24px system-ui, sans-serif'; g.fillText('AI Interview Coach · ' + new Date().toLocaleDateString(), 60, 580);
+  return c;
+}
+
 async function finish() {
   $('interview').classList.add('hidden'); step(3); const r = $('results'); r.classList.remove('hidden');
   r.innerHTML = '<div class="card"><div class="loading"><div class="spinner"></div>Preparing your debrief…</div><div class="skel" style="width:60%"></div><div class="skel"></div></div>';
-  const avg = (k) => S.turns.reduce((a, t) => a + t.evaluation.scores[k], 0) / S.turns.length;
-  const overall = Math.round((S.turns.reduce((a, t) => a + t.evaluation.overall, 0) / S.turns.length) * 10) / 10;
-  let d; try { d = await api('/api/summary', { role: S.role, turns: S.turns.map((t) => ({ question: t.question, isFollowUp: t.isFollowUp, evaluation: { scores: t.evaluation.scores, summary: t.evaluation.summary } })) }); }
+  const T = bestTurns();
+  const avg = (k) => T.reduce((a, t) => a + t.evaluation.scores[k], 0) / T.length;
+  const overall = Math.round((T.reduce((a, t) => a + t.evaluation.overall, 0) / T.length) * 10) / 10;
+  const avgs = Object.fromEntries(S.criteria.map((c) => [c.key, Math.round(avg(c.key) * 10) / 10]));
+  try { const h = JSON.parse(store.get('history') || '[]'); h.push({ d: Date.now(), role: S.role, overall, scores: avgs, n: T.length }); store.set('history', JSON.stringify(h.slice(-20))); } catch {}
+  let d; try { d = await api('/api/summary', { role: S.role, turns: T.map((t) => ({ question: t.question, isFollowUp: t.isFollowUp, evaluation: { scores: t.evaluation.scores, summary: t.evaluation.summary } })) }); }
   catch (e) { d = { headline: 'Interview complete', top_strengths: [], top_priorities: [], practice_plan: 'The written debrief is unavailable right now — your scores are below.' }; }
   const weakest = S.criteria.map((c) => ({ c, v: avg(c.key) })).sort((a, b) => a.v - b.v)[0];
-  r.innerHTML = `<div class="card fb"><div class="hero">${ring(overall, 124)}<div class="verdict"><h2 style="font-size:22px">${esc(d.headline)}</h2><p class="muted">${S.turns.length} answers · ${esc(S.role)} · weakest area: <b>${esc(weakest.c.label)}</b> (${weakest.v.toFixed(1)})</p></div></div>
-    ${bars((k) => Math.round(avg(k) * 10) / 10)}
+  const attempts = (t) => S.turns.filter((x) => x.qkey === t.qkey).length;
+  const fill = T.reduce((a, t) => a + (t.delivery?.fillers.total || 0), 0), wc = T.reduce((a, t) => a + (t.delivery?.words || 0), 0);
+  r.innerHTML = `<div class="card fb"><div class="hero">${ring(overall, 124)}<div class="verdict"><h2 style="font-size:22px">${esc(d.headline)}</h2><p class="muted">${T.length} answers · ${esc(S.role)} · weakest area: <b>${esc(weakest.c.label)}</b> (${weakest.v.toFixed(1)})</p></div></div>
+    ${bars((k) => avgs[k])}
+    <div class="dchips"><span><b>${wc}</b> words spoken/typed</span><span><b>${fill}</b> filler words (${wc ? ((fill / wc) * 100).toFixed(1) : 0}/100 words)</span>${S.turns.length > T.length ? `<span><b>${S.turns.length - T.length}</b> retr${S.turns.length - T.length > 1 ? 'ies' : 'y'} — best attempts counted</span>` : ''}</div>
     ${d.top_strengths.length ? `<h3>Strengths</h3><ul class="clean">${d.top_strengths.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
     ${d.top_priorities.length ? `<h3>Practise next</h3><ol class="clean">${d.top_priorities.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>` : ''}
     <p>${esc(d.practice_plan)}</p>
-    <h3>Answer by answer</h3>${S.turns.map((t, i) => `<div class="qrow"><span>${t.isFollowUp ? '↳ ' : `<b>Q${S.turns.slice(0, i + 1).filter((x) => !x.isFollowUp).length}.</b> `}${esc(t.question)}</span><span class="pill ${tone(t.evaluation.overall)}">${t.evaluation.overall}</span></div>`).join('')}
-    <div class="row" style="margin-top:20px"><button class="primary" onclick="location.reload()">Practise again</button><button id="dl">⬇ Download report</button><button id="cp">Copy as Markdown</button></div></div>
-    <details class="card t"><summary>Full transcript with rewrites</summary>${S.turns.map((t) => `<h3>${t.isFollowUp ? 'Follow-up' : 'Question'}: ${esc(t.question)}</h3><p>${esc(t.answer)}</p><p class="muted"><b>Stronger version:</b> ${esc(t.evaluation.improved_answer)}</p>`).join('')}</details>`;
+    <h3>Answer by answer</h3>${T.map((t, i) => `<div class="qrow"><span>${t.isFollowUp ? '↳ ' : `<b>Q${T.slice(0, i + 1).filter((x) => !x.isFollowUp).length}.</b> `}${esc(t.question)}${attempts(t) > 1 ? ` <span class="hint">(${attempts(t)} attempts)</span>` : ''}</span><span class="pill ${tone(t.evaluation.overall)}">${t.evaluation.overall}</span></div>`).join('')}
+    <div class="row" style="margin-top:20px"><button class="primary" onclick="location.reload()">Practise again</button><button id="card">🖼 Score card</button><button id="dl">⬇ Report</button><button id="cp">Copy Markdown</button></div></div>
+    <details class="card t"><summary>Full transcript with rewrites</summary>${T.map((t) => `<h3>${t.isFollowUp ? 'Follow-up' : 'Question'}: ${esc(t.question)}</h3><p>${esc(t.answer)}</p><p class="muted"><b>Stronger version:</b> ${esc(t.evaluation.improved_answer)}</p>`).join('')}</details>`;
   animate(r);
-  const md = `# Mock interview report — ${S.role}\n\n**Overall: ${overall}/5** — ${d.headline}\n\n## Practise next\n${d.top_priorities.map((x, i) => `${i + 1}. ${x}`).join('\n')}\n\n## Answers\n` + S.turns.map((t) => `### ${t.question}\nScore: ${t.evaluation.overall}/5 — ${t.evaluation.summary}\n\n**Your answer:** ${t.answer}\n\n**Stronger version:** ${t.evaluation.improved_answer}\n`).join('\n');
+  const md = `# Mock interview report — ${S.role}\n\n**Overall: ${overall}/5** — ${d.headline}\n\n## Practise next\n${d.top_priorities.map((x, i) => `${i + 1}. ${x}`).join('\n')}\n\n## Answers\n` + T.map((t) => `### ${t.question}\nScore: ${t.evaluation.overall}/5 — ${t.evaluation.summary}\n\n**Your answer:** ${t.answer}\n\n**Stronger version:** ${t.evaluation.improved_answer}\n`).join('\n');
   $('cp').onclick = () => navigator.clipboard?.writeText(md).then(() => toast('Report copied'));
   $('dl').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([md], { type: 'text/markdown' })); a.download = 'interview-report.md'; a.click(); };
+  $('card').onclick = () => { const a = document.createElement('a'); a.href = scoreCard(overall, avgs).toDataURL('image/png'); a.download = 'interview-score.png'; a.click(); toast('Score card saved'); };
 }
 </script>
 </body>

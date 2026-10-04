@@ -2,46 +2,61 @@ import express from 'express';
 import multer from 'multer';
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { hasKey, MODEL } from './lib/llm.js';
 import { planQuestions, evaluateAnswer, summarizeSession } from './lib/coach.js';
 import { CRITERIA } from './lib/rubric.js';
+import { redactPII, redactDeep } from './lib/privacy.js';
+import { deliveryMetrics } from './lib/delivery.js';
+import { hit, clientIp, persistent } from './lib/ratelimit.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const app = express();
+const ON_VERCEL = Boolean(process.env.VERCEL);
+const LIMITS = { resume: 20000, jd: 12000, answer: 6000, role: 120, question: 600 };
+const PER_HOUR = +process.env.RATE_LIMIT_PER_HOUR || 60; // per IP, LLM endpoints
+const DAILY_CAP = +process.env.DAILY_CAP || 400; // whole-app daily ceiling on evaluated answers (spend guard)
+
+export const app = express();
+app.set('trust proxy', true);
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 app.use(express.json({ limit: '1mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-const ON_VERCEL = Boolean(process.env.VERCEL);
 if (!ON_VERCEL) fs.mkdirSync(path.join(__dirname, 'data'), { recursive: true });
+// Structured, PII-redacted log lines. On Vercel they go to runtime logs (read-only filesystem).
 const log = (file, obj) => {
-  const line = JSON.stringify({ ts: new Date().toISOString(), ...obj });
-  if (ON_VERCEL) return console.log(`[${file}] ${line}`); // read-only FS: use Vercel runtime logs
-  fs.appendFile(path.join(__dirname, 'data', file), line + '\n', () => {});
+  const line = JSON.stringify({ ts: new Date().toISOString(), ...redactDeep(obj) });
+  if (ON_VERCEL) return console.log(`[${file}] ${line}`);
+  if (process.env.NODE_ENV !== 'test') fs.appendFile(path.join(__dirname, 'data', file), line + '\n', () => {});
 };
 
-// Minimal per-IP rate limit for LLM endpoints (protects the API quota on a public deploy).
-const hits = new Map();
-const LIMIT = +process.env.RATE_LIMIT_PER_HOUR || 60;
-app.use('/api', (req, res, next) => {
-  if (req.method !== 'POST' || req.path === '/feedback' || req.path === '/resume') return next();
-  const ip = (req.headers['x-forwarded-for'] || req.ip || '').toString().split(',')[0].trim();
-  const now = Date.now(), arr = (hits.get(ip) || []).filter((t) => now - t < 3600e3);
-  if (arr.length >= LIMIT) return res.status(429).json({ error: 'Rate limit reached for this hour. Please try again later.' });
-  arr.push(now); hits.set(ip, arr); next();
-});
+class HttpError extends Error {
+  constructor(status, message, extra = {}) { super(message); this.status = status; this.extra = extra; }
+}
+const need = (cond, msg) => { if (!cond) throw new HttpError(400, msg); };
+const tooLong = (name, v, max) => need(typeof v === 'string' && v.length <= max, `${name} is too long (max ${max} characters).`);
 
-const wrap = (fn) => async (req, res) => {
+// Per-IP hourly limit + global daily cap. Persistent only when Upstash is configured (see README).
+async function guard(req, res, cost = 1) {
+  const ip = clientIp(req);
+  const [perIp, daily] = await Promise.all([hit(`ip:${ip}`, PER_HOUR, 3600), cost ? hit(`day:${new Date().toISOString().slice(0, 10)}`, DAILY_CAP, 86400) : { ok: true }]);
+  if (!perIp.ok) { res.set('Retry-After', '3600'); throw new HttpError(429, 'You’ve reached the hourly limit for practice requests. Please try again later.'); }
+  if (!daily.ok) { res.set('Retry-After', '3600'); throw new HttpError(429, 'Today’s free capacity has been used up. Please come back tomorrow.'); }
+}
+
+const wrap = (fn, { limited = true, cost = 1 } = {}) => async (req, res) => {
   try {
-    if (!hasKey()) return res.status(500).json({ error: 'No API key set. Copy .env.example to .env and add GROQ_API_KEY.' });
+    if (!hasKey()) throw new HttpError(500, 'No API key set. Copy .env.example to .env and add GROQ_API_KEY.');
+    if (limited) await guard(req, res, cost);
     res.json(await fn(req));
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: e.message || 'Something went wrong' });
+    const status = e.status || 500;
+    if (status >= 500) console.error(e);
+    res.status(status).json({ error: status >= 500 && !e.status ? 'Something went wrong on our side. Please try again.' : e.message });
   }
 };
 
+app.get('/api/health', (_req, res) => res.json({ ok: true, model: MODEL(), keyConfigured: hasKey(), persistentRateLimit: persistent }));
 app.get('/api/config', (_req, res) => res.json({ criteria: CRITERIA, model: MODEL(), keyConfigured: hasKey() }));
 
 app.post('/api/resume', upload.single('resume'), async (req, res) => {
@@ -67,30 +82,45 @@ app.post('/api/resume', upload.single('resume'), async (req, res) => {
 });
 
 app.post('/api/start', wrap(async ({ body }) => {
-  const { resume, jd, role, count } = body;
-  if (!resume || !jd || !role) throw new Error('resume, jd and role are required');
-  const questions = await planQuestions({ resume, jd, role, count: Math.min(Math.max(+count || 5, 3), 8) });
-  log('sessions.jsonl', { event: 'start', role, questions: questions.length });
-  return { questions };
+  const { resume, jd, role, count, mode, difficulty } = body;
+  need(resume && jd && role, 'resume, jd and role are required');
+  tooLong('Resume', resume, LIMITS.resume); tooLong('Job description', jd, LIMITS.jd); tooLong('Role', role, LIMITS.role);
+  const plan = await planQuestions({
+    resume: redactPII(resume), jd: redactPII(jd), role,
+    count: Math.min(Math.max(+count || 5, 3), 8),
+    mode: ['mixed', 'behavioural', 'technical', 'case'].includes(mode) ? mode : 'mixed',
+    difficulty: difficulty === 'tough' ? 'tough' : 'standard',
+  });
+  log('sessions.jsonl', { event: 'start', role, mode, difficulty, questions: plan.questions.length });
+  return plan;
 }));
 
 app.post('/api/answer', wrap(async ({ body }) => {
-  const { resume, jd, role, question, answer, isFollowUp, sessionId, inputMode } = body;
-  if (!answer?.trim()) throw new Error('Empty answer');
-  const result = await evaluateAnswer({ resume, jd, role, question, answer, isFollowUp });
-  log('turns.jsonl', { sessionId, role, question, answer, isFollowUp, inputMode, ...result });
+  const { resume, jd, role, question, answer, isFollowUp, sessionId, inputMode, seconds, attempt } = body;
+  need(answer?.trim(), 'Empty answer'); need(question && role, 'question and role are required');
+  tooLong('Answer', answer, LIMITS.answer); tooLong('Resume', resume || '', LIMITS.resume); tooLong('Job description', jd || '', LIMITS.jd); tooLong('Question', question, LIMITS.question);
+  const result = await evaluateAnswer({ resume: redactPII(resume || ''), jd: redactPII(jd || ''), role, question, answer: redactPII(answer), isFollowUp: Boolean(isFollowUp) });
+  result.delivery = deliveryMetrics(answer, +seconds, inputMode);
+  log('turns.jsonl', { sessionId, role, question, answer, isFollowUp, attempt, inputMode, delivery: result.delivery, ...result });
   return result;
 }));
 
-app.post('/api/summary', wrap(async ({ body }) => summarizeSession(body)));
+app.post('/api/summary', wrap(async ({ body }) => {
+  need(Array.isArray(body.turns) && body.turns.length && body.turns.length <= 30, 'turns required');
+  return summarizeSession({ role: String(body.role || '').slice(0, LIMITS.role), turns: body.turns });
+}, { cost: 0 })); // per-IP limit only; doesn't spend the daily answer budget
 
 // Candidate rates whether the feedback was accurate / useful. Fuels the real-user research.
-app.post('/api/feedback', (req, res) => {
-  log('feedback.jsonl', req.body);
+app.post('/api/feedback', async (req, res) => {
+  const { sessionId, question, rating, note } = req.body || {};
+  if (!['accurate', 'partly', 'wrong'].includes(rating)) return res.status(400).json({ error: 'invalid rating' });
+  try { await guard(req, res, 0); } catch (e) { return res.status(e.status || 429).json({ error: e.message }); }
+  log('feedback.jsonl', { sessionId, question: String(question || '').slice(0, 300), rating, note: String(note || '').slice(0, 500) });
   res.json({ ok: true });
 });
 
-if (!ON_VERCEL) {
+const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (!ON_VERCEL && isMain) {
   const port = process.env.PORT || 3000;
   app.listen(port, () => console.log(`AI Interview Coach → http://localhost:${port}  (model: ${MODEL()})`));
 }

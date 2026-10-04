@@ -28,6 +28,17 @@ npm install
 cp .env.example .env     # add GROQ_API_KEY (or ANTHROPIC_API_KEY)
 npm start                # http://localhost:3000
 ```
+### Configuration (env vars)
+| Var | Default | Purpose |
+|---|---|---|
+| `GROQ_API_KEY` / `ANTHROPIC_API_KEY` | — | Model provider (Groq wins if both set) |
+| `GROQ_MODEL` / `GROQ_MODEL_FAST` | `openai/gpt-oss-120b` / `openai/gpt-oss-20b` | Scoring model / cheaper model for rewrite + fact-check |
+| `GROQ_TPM` | `7000` | Client-side tokens-per-minute throttle (Groq free tier caps at 8,000/min/model) |
+| `RATE_LIMIT_PER_HOUR` | `60` | Per-IP limit on LLM endpoints |
+| `DAILY_CAP` | `400` | App-wide daily cap on evaluated answers (spend guard) |
+| `UPSTASH_REDIS_REST_URL` / `_TOKEN` | — | Makes the limits **persistent across serverless instances** (free Upstash Redis). Without it, limits are per instance |
+| `LLM_MOCK=1` | — | Deterministic fake model for tests/offline UI work |
+
 Voice mode (checkbox on the setup screen) uses the browser's built-in speech synthesis + recognition — best in Chrome/Edge/Safari. Typing always works.
 
 ## What's here
@@ -39,6 +50,8 @@ Voice mode (checkbox on the setup screen) uses the browser's built-in speech syn
 | `lib/guards.js` | Deterministic post-checks: quote verification, score caps, invented-number detection |
 | `eval/` | Labelled calibration set + adversarial failure-mode cases + runner (`npm run eval`) |
 | `test/` | Unit tests for guardrails, no API key needed (`npm test`) |
+| `lib/privacy.js`, `lib/delivery.js`, `lib/ratelimit.js` | PII redaction, filler/pace metrics, rate limit + daily cap |
+| `public/privacy.html` | Plain-language privacy page linked from the consent box |
 | `docs/PERFORMANCE.md` | **Auto-generated** eval trend, latency, tokens (`npm run report`) |
 | `docs/USAGE.md` | **Auto-generated** usage, reliability and user-rating stats (`npm run usage`) |
 | `.github/workflows/` | `ci.yml` (tests on push) · `eval.yml` (manual + weekly eval, publishes results to the run page) |

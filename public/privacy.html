@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Privacy — AI Interview Coach</title>
+<style>:root{color-scheme:light dark}body{font:16px/1.6 -apple-system,system-ui,sans-serif;max-width:720px;margin:0 auto;padding:32px 16px 80px}h1{letter-spacing:-.02em}h2{margin-top:28px;font-size:18px}a{color:#4f46e5}code{background:rgba(127,127,127,.15);padding:1px 6px;border-radius:5px}</style></head>
+<body>
+<p><a href="/">← Back to the coach</a></p>
+<h1>Privacy</h1>
+<p>This is a practice tool. Here is plainly what happens to your data.</p>
+<h2>What is sent where</h2>
+<ul>
+<li>Your <b>resume text, the job description, your answers and the target role</b> are sent to an AI model provider (Groq, running an open model, or Anthropic if the operator configures it) to generate questions and feedback.</li>
+<li><b>Before sending</b>, the server removes email addresses, phone numbers and profile links (LinkedIn, GitHub, etc.) from your text. Other personal details you type (names, employers, addresses) are <i>not</i> removed — leave out anything you don't want processed.</li>
+<li>Audio is <b>not</b> uploaded by this app. Voice mode uses your browser's built-in speech recognition, which in some browsers (for example Chrome) sends audio to the browser vendor's speech service.</li>
+</ul>
+<h2>What is stored</h2>
+<ul>
+<li><b>In your browser only:</b> your draft inputs, progress history (scores, dates, roles) and your consent choice, in <code>localStorage</code>. Use <b>“Delete my data”</b> on the home page to remove them.</li>
+<li><b>On the server:</b> there are no user accounts and no database. The app writes redacted operational log lines (your answers, scores, timings and the accuracy rating you give) to the hosting provider's runtime logs. These are used to measure quality and fix bugs, and are retained for the hosting provider's log retention period. Resumes are not written to logs.</li>
+<li>Aggregate statistics (counts and percentages only) may be published; individual answers are never published.</li>
+</ul>
+<h2>Your choices</h2>
+<ul>
+<li>Don't tick the consent box and nothing is sent.</li>
+<li>To ask for server-side log lines about your session to be deleted, contact the operator of this deployment with your approximate time of use.</li>
+</ul>
+<h2>Limits you should know about</h2>
+<p>AI feedback can be wrong, even when it sounds confident. The app shows a confidence level and reliability notes, verifies that quoted evidence appears in your answer, and flags numbers that aren't in your resume — but always apply your own judgement, and never state a figure in a real interview that isn't true.</p>
+</body></html>
