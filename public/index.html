@@ -539,7 +539,7 @@ function ask(question, type, isFollowUp, why, attempt = 1) {
 }
 const askMain = () => ask(S.questions[S.idx].question, S.questions[S.idx].type, false, S.questions[S.idx].why_asked);
 
-const STAGES = ['Reading your answer…', 'Scoring against the rubric…', 'Verifying quotes against what you said…', 'Fact-checking the rewrite…'];
+const STAGES = ['Reading your answer…', 'Scoring against the rubric…', 'Verifying quotes against what you said…', 'Fact-checking the rewrite…', 'Queued — the free AI tier is busy. This can take up to a minute…'];
 $('submit').onclick = async () => {
   if (recOn) rec.stop(); stopSpeak();
   const answer = $('answer').value.trim();
