@@ -111,7 +111,7 @@ There are no accounts and no database. Emails, phone numbers and links are strip
 - Scores are an aid to practice, not a prediction of how a real interviewer will rate you. The model still leans a little generous.
 - The calibration labels come from a single rater so far. More independent raters would make the accuracy numbers more trustworthy.
 - Voice mode relies on the browser's speech recognition, so quality varies, and delivery stats are based on the transcript rather than the audio.
-- On Groq's free tier the app can score only about two answers a minute across all users.
+- On Groq's free tier the main model allows roughly 60 scored answers a day (200,000 tokens) and about two a minute, shared by every user. When that runs out the app automatically falls back to a smaller model (answers are flagged as less reliable) and shows a clear message if both are exhausted. Use a paid key for anything beyond personal use, and give the scheduled evaluation its own key so it doesn't use up the app's daily allowance.
 - The planned real-user testing sessions (see [docs/user-research.md](docs/user-research.md)) haven't happened yet, so there is no user feedback data to report.
 
 ## Deploying

@@ -50,6 +50,11 @@ const wrap = (fn, { limited = true, cost = 1 } = {}) => async (req, res) => {
     if (limited) await guard(req, res, cost);
     res.json(await fn(req));
   } catch (e) {
+    if (e.code === 'QUOTA') {
+      const mins = Math.max(1, Math.ceil((e.retryAfter || 600) / 60));
+      res.set('Retry-After', String((e.retryAfter || 600) | 0));
+      return res.status(429).json({ error: `The AI service's free daily capacity is used up. Please try again in about ${mins} minute${mins > 1 ? 's' : ''}.` });
+    }
     const status = e.status || 500;
     if (status >= 500) console.error(e);
     res.status(status).json({ error: status >= 500 && !e.status ? 'Something went wrong on our side. Please try again.' : e.message });
