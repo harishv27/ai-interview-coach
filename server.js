@@ -88,7 +88,7 @@ app.post('/api/start', wrap(async ({ body }) => {
   const plan = await planQuestions({
     resume: redactPII(resume), jd: redactPII(jd), role,
     count: Math.min(Math.max(+count || 5, 3), 8),
-    mode: ['mixed', 'behavioural', 'technical', 'case'].includes(mode) ? mode : 'mixed',
+    mode: ['mixed', 'behavioural', 'technical', 'system_design'].includes(mode) ? mode : 'mixed',
     difficulty: difficulty === 'tough' ? 'tough' : 'standard',
   });
   log('sessions.jsonl', { event: 'start', role, mode, difficulty, questions: plan.questions.length });

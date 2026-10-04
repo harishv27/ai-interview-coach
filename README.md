@@ -4,13 +4,13 @@
 [![Eval](https://github.com/harishv27/ai-interview-coach/actions/workflows/eval.yml/badge.svg)](https://github.com/harishv27/ai-interview-coach/actions/workflows/eval.yml)
 [**Live demo**](https://ai-interview-coach-nine-plum.vercel.app)
 
-A mock-interview app for job seekers. You upload your resume, paste a job description and pick a role. The coach then asks questions tailored to both, scores each answer, asks a follow-up, and shows you a stronger version of what you said.
+A mock-interview app for software and AI engineers. You upload your resume, paste a job posting and pick a role (AI engineer, SDE, backend, frontend, full-stack, ML, data, DevOps). The coach then asks questions tailored to both, scores each answer, asks a follow-up, and shows you a stronger version of what you said.
 
 Most "AI feedback" tools just sound confident. This project is as much about **checking the feedback** as generating it, so every score is backed by a quote from your own answer, and the app tells you when it isn't sure.
 
 ## What it does
 
-- **Tailored questions** from your resume and the job posting, with a heads-up on the requirements your resume doesn't clearly cover.
+- **Tailored questions** from your resume and the job posting (your stack, projects and the role's requirements), with a heads-up on the requirements your resume doesn't clearly cover.
 - **Text or voice.** In voice mode the question is read aloud and you answer with your microphone, using your browser's built-in speech tools.
 - **Scores on five criteria:** relevance, structure, specificity, business impact and clarity. Each is a 1–5 score with written definitions, so a "4" means the same thing every time (see `lib/rubric.js`).
 - **Evidence for everything.** Each strength and weakness quotes your exact words. The server checks the quote really is in your answer and drops it if not.
@@ -18,7 +18,7 @@ Most "AI feedback" tools just sound confident. This project is as much about **c
 - **Delivery stats:** filler words, speaking pace and overly long sentences.
 - **Retry any answer** and see whether your score improved. The debrief counts your best attempt.
 - **Progress tracking** stored in your browser only, plus a downloadable report and score card.
-- Focus modes (mixed, behavioural, technical, case), a tougher difficulty, and a light/dark theme.
+- Focus modes: mixed, behavioural, technical depth and system design (including LLM/RAG design for AI roles), plus a tougher difficulty and a light/dark theme.
 
 ## How the feedback is kept honest
 
@@ -107,6 +107,7 @@ There are no accounts and no database. Emails, phone numbers and links are strip
 
 ## Limitations
 
+- The evaluation set is still based on product-manager answers; an engineering-specific set is the next thing to build, so the accuracy numbers above don't yet describe engineering answers.
 - Scores are an aid to practice, not a prediction of how a real interviewer will rate you. The model still leans a little generous.
 - The calibration labels come from a single rater so far. More independent raters would make the accuracy numbers more trustworthy.
 - Voice mode relies on the browser's speech recognition, so quality varies, and delivery stats are based on the transcript rather than the audio.

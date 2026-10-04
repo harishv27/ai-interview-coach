@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI Interview Coach</title>
-<meta name="description" content="Practise a tailored mock interview and get evidence-backed, scored feedback.">
+<meta name="description" content="Practise software and AI engineering interviews with scored, evidence-backed feedback.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎙</text></svg>">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <style>
@@ -202,13 +202,13 @@
 
   <!-- SETUP -->
   <section id="setup">
-    <h1>Practise the interview<br><b>before it counts.</b></h1>
-    <p class="lead">Upload your resume, paste the job, and get a tailored mock interview with scored feedback — every point backed by your own words.</p>
-    <div class="perks"><span>🎯 Tailored questions</span><span>🗣 Voice or text</span><span>📏 5-criteria rubric</span><span>🔍 Quotes your exact words</span><span>🛡 Flags uncertain feedback</span></div>
+    <h1>Practise the engineering interview<br><b>before it counts.</b></h1>
+    <p class="lead">Upload your resume, paste the job posting, and practise the questions you will actually face — technical depth, system design and behavioural — with scored feedback backed by your own words.</p>
+    <div class="perks"><span>💻 Built for SDE, AI &amp; ML roles</span><span>🏗 System design rounds</span><span>🗣 Voice or text</span><span>🔍 Quotes your exact words</span><span>🛡 Flags uncertain feedback</span></div>
 
     <div id="history"></div>
     <div class="card">
-      <div class="row"><h2>Your interview</h2><span class="spacer"></span><button class="link" id="sample" type="button">✨ Try with sample data</button></div>
+      <h2>Your interview</h2>
 
       <div class="field">
         <div class="lab"><span>Resume</span><small id="resumeCount"></small></div>
@@ -220,13 +220,13 @@
 
       <div class="field">
         <div class="lab"><span>Job description</span><small id="jdCount"></small></div>
-        <textarea id="jd" placeholder="Paste the full job posting — responsibilities and requirements drive the questions"></textarea>
+        <textarea id="jd" placeholder="Paste the full job posting — responsibilities, tech stack and requirements drive the questions"></textarea>
       </div>
 
       <div class="grid2">
         <div class="field">
           <div class="lab"><span>Target role</span></div>
-          <input id="role" type="text" placeholder="e.g. Product Manager" autocomplete="off">
+          <input id="role" type="text" placeholder="e.g. AI Engineer" autocomplete="off">
           <div class="chips" id="roleChips"></div>
         </div>
         <div class="field">
@@ -237,7 +237,7 @@
       </div>
 
       <div class="optrow">
-        <div class="field"><div class="lab"><span>Focus</span></div><div class="seg wrap" id="mode" role="group" aria-label="Interview focus"><button type="button" data-v="mixed" class="on">Mixed</button><button type="button" data-v="behavioural">Behavioural</button><button type="button" data-v="technical">Technical</button><button type="button" data-v="case">Case</button></div></div>
+        <div class="field"><div class="lab"><span>Focus</span></div><div class="seg wrap" id="mode" role="group" aria-label="Interview focus"><button type="button" data-v="mixed" class="on">Mixed</button><button type="button" data-v="behavioural">Behavioural</button><button type="button" data-v="technical">Technical</button><button type="button" data-v="system_design">System design</button></div></div>
         <div class="field"><div class="lab"><span>Difficulty</span></div><div class="seg" id="level" role="group" aria-label="Difficulty"><button type="button" data-v="standard" class="on">Standard</button><button type="button" data-v="tough">Tough</button></div></div>
       </div>
 
@@ -262,7 +262,7 @@
         <textarea id="answer" placeholder="Type your answer — or press the mic and speak. You can edit the transcript before submitting." aria-label="Your answer"></textarea>
         <div class="counter" id="counter">0 words · 0:00</div>
       </div>
-      <div class="tip" id="tip">💡 <span>Aim for 60–120 seconds. Set the scene briefly, say what <b>you</b> did, and finish with a result — ideally with a number.</span></div>
+      <div class="tip" id="tip">💡 <span id="tipText"></span></div>
       <div class="row" style="margin-top:14px">
         <button id="mic" class="rec hidden" type="button"><span class="pulse"></span><span id="micLabel">Speak</span></button>
         <span class="spacer"></span>
@@ -310,7 +310,7 @@ mq.addEventListener?.('change', () => { if (!store.get('theme')) paintTheme(); }
 paintTheme();
 
 /* ---------- Setup ---------- */
-const ROLES = ['Product Manager', 'Software Engineer', 'Data Analyst', 'Marketing Manager', 'Designer', 'Sales / Account Exec'];
+const ROLES = ['AI Engineer', 'ML Engineer', 'Software Engineer (SDE)', 'Backend Developer', 'Frontend Developer', 'Full-Stack Developer', 'Data Engineer', 'DevOps / SRE'];
 $('roleChips').innerHTML = ROLES.map((r) => `<button type="button">${esc(r)}</button>`).join('');
 $('roleChips').onclick = (e) => { if (e.target.tagName === 'BUTTON') { $('role').value = e.target.textContent; saveDraft(); } };
 
@@ -359,12 +359,6 @@ $('resumeFile').onchange = (e) => uploadResume(e.target.files[0]);
 ['dragenter', 'dragover'].forEach((ev) => $('drop').addEventListener(ev, (e) => { e.preventDefault(); $('drop').classList.add('over'); }));
 ['dragleave', 'drop'].forEach((ev) => $('drop').addEventListener(ev, (e) => { e.preventDefault(); $('drop').classList.remove('over'); }));
 $('drop').addEventListener('drop', (e) => uploadResume(e.dataTransfer.files[0]));
-
-$('sample').onclick = () => {
-  $('resume').value = `Priya Raman — Product Manager\nAcme Cloud (B2B SaaS), Product Manager, 2021–present\n- Owned the onboarding funnel for the self-serve product; ran 14 A/B tests in 18 months.\n- Led redesign of the setup wizard with 1 designer and 4 engineers; activation rose from 31% to 44%.\n- Built a churn-risk dashboard with the data team; CS used it to prioritise 40 at-risk accounts per quarter.\nBeta Retail, Associate PM, 2019–2021\n- Shipped a returns-tracking feature for 3,000 merchants; returns tickets fell about 20%.\nSkills: SQL, Amplitude, experimentation, roadmapping. MBA, 2019.`;
-  $('jd').value = `Product Manager, Growth — Northwind (B2B SaaS)\nYou will own activation and retention for our self-serve product. Run experiments, partner with design and engineering, use data to prioritise, and communicate with executives.\nRequirements: 3+ years PM experience, strong analytical skills, A/B testing experience, cross-functional alignment, customer empathy.`;
-  $('role').value = 'Product Manager'; saveDraft();
-};
 
 $('startBtn').onclick = async () => {
   const resume = $('resume').value.trim(), jd = $('jd').value.trim(), role = $('role').value.trim();
@@ -426,6 +420,9 @@ function ask(question, type, isFollowUp, why, attempt = 1) {
   $('qtype').textContent = isFollowUp ? 'Follow-up' : type; $('qtype').classList.toggle('fu', isFollowUp);
   $('question').textContent = question; $('why').textContent = why ? `Why this question: ${why}` : '';
   $('tip').classList.toggle('hidden', isFollowUp);
+  $('tipText').innerHTML = type === 'technical' || type === 'situational'
+    ? 'Think aloud: state your assumptions, walk through your approach, name the <b>trade-offs</b>, and mention edge cases and how you would test or monitor it.'
+    : 'Aim for 60–120 seconds. Set the scene briefly, say what <b>you</b> built or decided, and finish with a result — ideally with a number (latency, cost, users, accuracy).';
   Object.assign($('answer'), { value: '', disabled: false }); $('submit').disabled = false; $('feedback').innerHTML = '';
   $('ansErr').textContent = ''; $('micHint').textContent = '';
   S.t0 = Date.now(); clearInterval(S.timer); S.timer = setInterval(tick, 1000); tick();
