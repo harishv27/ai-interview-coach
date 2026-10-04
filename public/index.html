@@ -6,6 +6,7 @@
 <title>AI Interview Coach</title>
 <meta name="description" content="Practise a tailored mock interview and get evidence-backed, scored feedback.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎙</text></svg>">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <style>
   :root {
     --bg:#f6f7fb; --card:#ffffff; --ink:#14161f; --mute:#60667a; --line:#e3e6ef; --soft:#eef1f8;
@@ -14,12 +15,21 @@
     --shadow:0 1px 2px rgba(20,22,31,.05), 0 8px 24px rgba(20,22,31,.06);
     --r:16px;
   }
-  @media (prefers-color-scheme: dark) { :root {
+  :root { color-scheme: light; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
     --bg:#0e1017; --card:#171a24; --ink:#eceef6; --mute:#9aa1b8; --line:#272b3a; --soft:#1e2230;
     --brand:#8b83ff; --brand-2:#a78bfa; --brand-ink:#0e1017;
     --good:#4ade80; --warn:#fbbf24; --bad:#f87171;
     --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    color-scheme: dark;
   } }
+  :root[data-theme="dark"] {
+    --bg:#0e1017; --card:#171a24; --ink:#eceef6; --mute:#9aa1b8; --line:#272b3a; --soft:#1e2230;
+    --brand:#8b83ff; --brand-2:#a78bfa; --brand-ink:#0e1017;
+    --good:#4ade80; --warn:#fbbf24; --bad:#f87171;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    color-scheme: dark;
+  }
   * { box-sizing:border-box; }
   html { scroll-behavior:smooth; }
   body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 Inter, -apple-system, system-ui, "Segoe UI", sans-serif; -webkit-font-smoothing:antialiased; }
@@ -31,6 +41,8 @@
   header { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px 0 18px; flex-wrap:wrap; }
   .logo { display:flex; align-items:center; gap:10px; font-weight:700; font-size:18px; letter-spacing:-.01em; }
   .logo i { width:34px; height:34px; border-radius:10px; display:grid; place-items:center; font-style:normal; color:#fff; background:linear-gradient(135deg,var(--brand),var(--brand-2)); }
+  .hdr-r { display:flex; align-items:center; gap:10px; }
+  .theme { width:38px; height:38px; padding:0; border-radius:50%; display:grid; place-items:center; font-size:17px; line-height:1; }
   .steps { display:flex; gap:6px; align-items:center; font-size:13px; color:var(--mute); }
   .steps span { display:flex; align-items:center; gap:6px; padding:5px 11px; border-radius:99px; background:var(--soft); }
   .steps span.on { background:var(--brand); color:var(--brand-ink); font-weight:600; }
@@ -168,9 +180,12 @@
 <main>
   <header>
     <div class="logo"><i>🎙</i> Interview Coach</div>
-    <nav class="steps" aria-label="Progress">
-      <span id="st1" class="on">① <em>Setup</em></span><span id="st2">② <em>Interview</em></span><span id="st3">③ <em>Debrief</em></span>
-    </nav>
+    <div class="hdr-r">
+      <nav class="steps" aria-label="Progress">
+        <span id="st1" class="on">① <em>Setup</em></span><span id="st2">② <em>Interview</em></span><span id="st3">③ <em>Debrief</em></span>
+      </nav>
+      <button id="themeBtn" class="theme" type="button" aria-label="Switch theme" title="Switch theme"></button>
+    </div>
   </header>
   <div id="banner" class="notes hidden" role="alert"></div>
 
@@ -267,6 +282,14 @@ fetch('/api/config').then((r) => r.json()).then((c) => {
   S.criteria = c.criteria;
   if (!c.keyConfigured) { $('banner').textContent = 'The server has no API key configured — add one and restart.'; $('banner').classList.remove('hidden'); }
 }).catch(() => {});
+
+/* ---------- Theme ---------- */
+const mq = matchMedia('(prefers-color-scheme: dark)');
+const curTheme = () => document.documentElement.dataset.theme || (mq.matches ? 'dark' : 'light');
+function paintTheme() { const d = curTheme() === 'dark'; $('themeBtn').textContent = d ? '☀️' : '🌙'; $('themeBtn').title = $('themeBtn').ariaLabel = d ? 'Switch to light theme' : 'Switch to dark theme'; }
+$('themeBtn').onclick = () => { const next = curTheme() === 'dark' ? 'light' : 'dark'; document.documentElement.dataset.theme = next; store.set('theme', next); paintTheme(); };
+mq.addEventListener?.('change', () => { if (!store.get('theme')) paintTheme(); });
+paintTheme();
 
 /* ---------- Setup ---------- */
 const ROLES = ['Product Manager', 'Software Engineer', 'Data Analyst', 'Marketing Manager', 'Designer', 'Sales / Account Exec'];

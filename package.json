@@ -6,7 +6,9 @@
   "scripts": {
     "test": "node --test test/",
     "start": "node server.js",
-    "eval": "node eval/run.js"
+    "eval": "node eval/run.js",
+    "report": "node scripts/report.js",
+    "usage": "node scripts/usage.js"
   },
   "keywords": [],
   "author": "",

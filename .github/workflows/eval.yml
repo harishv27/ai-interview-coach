@@ -1,0 +1,49 @@
+name: Eval
+# Runs the calibration + failure-mode suite against the live model, publishes the results to the
+# run summary, and commits refreshed docs/PERFORMANCE.md + eval/results (history.jsonl).
+on:
+  workflow_dispatch:
+    inputs:
+      runs:
+        description: Runs per case (more = better variance estimate, slower)
+        default: '1'
+  schedule:
+    - cron: '0 6 * * 1' # Mondays 06:00 UTC
+permissions:
+  contents: write
+concurrency: eval
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      GROQ_MODEL: ${{ vars.GROQ_MODEL || 'openai/gpt-oss-120b' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm test
+      - name: Run eval
+        run: npm run eval -- --runs ${{ inputs.runs || 1 }}
+      - name: Regenerate performance report
+        run: npm run report
+      - name: Publish run summary
+        if: always()
+        run: |
+          echo "## Eval results" >> "$GITHUB_STEP_SUMMARY"
+          f=$(ls -t eval/results/*.md | head -1)
+          [ -f "$f" ] && cat "$f" >> "$GITHUB_STEP_SUMMARY"
+          echo -e "\n[Full history →](docs/PERFORMANCE.md)" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eval-results
+          path: eval/results/
+      - name: Commit refreshed reports
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add eval/results docs/PERFORMANCE.md README.md
+          git diff --cached --quiet || (git commit -m "chore: update eval results [skip ci]" && git push)

@@ -34,6 +34,7 @@ async function pool(items, n, fn) {
 const all_ = await pool(cases, 1, runCase);
 const errored = all_.filter((r) => !r.runs.length);
 const results = all_.filter((r) => r.runs.length);
+const summary = {};
 const lines = [`# Eval report`, ``, `- Model: \`${MODEL()}\`  · Runs/case: ${RUNS}  · Date: ${new Date().toISOString()}`, ``];
 
 if (errored.length) lines.push(`## 0. Cases that errored (no usable output)`, ``, ...errored.map((r) => `- ${r.c.id}: ${r.error}`), ``);
@@ -51,11 +52,13 @@ if (cal.length) {
     lines.push(`| ${c.id} | ${hO.toFixed(1)} | ${aiO.toFixed(1)} | ${(aiO - hO >= 0 ? '+' : '') + (aiO - hO).toFixed(1)} | ${per.join(' / ')} | ${sd(runs.map((r) => r.evaluation.overall)).toFixed(2)} |`);
   }
   const all = Object.values(err).flat();
+  summary.mae = mean(all.map(Math.abs)); summary.bias = mean(all); summary.within1 = all.filter((d) => Math.abs(d) <= 1).length / all.length;
   lines.push(``, `**MAE:** ${mean(all.map(Math.abs)).toFixed(2)} · **Bias (+ = AI too generous):** ${mean(all).toFixed(2)} · **Within ±1 of human:** ${(100 * all.filter((d) => Math.abs(d) <= 1).length / all.length).toFixed(0)}%`);
   lines.push(``, `Per-criterion MAE: ${CRITERIA_KEYS.map((k) => `${k} ${mean(err[k].map(Math.abs)).toFixed(2)}`).join(' · ')}`, ``);
   // pairwise ranking agreement
   let agree = 0, tot = 0;
   for (let i = 0; i < ov.length; i++) for (let j = i + 1; j < ov.length; j++) if (Math.abs(ov[i].h - ov[j].h) >= 0.6) { tot++; if ((ov[i].a - ov[j].a) * (ov[i].h - ov[j].h) > 0) agree++; }
+  summary.rank = [agree, tot];
   lines.push(`**Ranking agreement** (pairs the humans separated by ≥0.6): ${agree}/${tot}`, ``);
 }
 
@@ -78,6 +81,7 @@ if (adv.length) {
     const ok = !fails.length; if (ok) pass++;
     lines.push(`| ${c.id} | ${c.failure_mode} | ${ok ? '✅ pass' : '❌ FAIL'} | ${ok ? 'overall ' + mean(runs.map((r) => r.evaluation.overall)).toFixed(1) : [...new Set(fails)].join('; ')} |`);
   }
+  summary.adv = [pass, adv.length];
   lines.push(``, `**Failure-mode pass rate:** ${pass}/${adv.length}`, ``);
 }
 
@@ -86,9 +90,21 @@ const flagCounts = {};
 results.forEach((r) => r.runs.forEach((x) => x.flags.forEach((f) => (flagCounts[f.type] = (flagCounts[f.type] || 0) + 1))));
 lines.push(`## 3. Guardrail activity`, ``, Object.keys(flagCounts).length ? Object.entries(flagCounts).map(([k, v]) => `- \`${k}\`: ${v}`).join('\n') : '- none triggered', ``);
 
+// ---- Performance (latency + tokens per evaluated answer; one "answer" = evaluate + rewrite audit)
+const metas = results.flatMap((r) => r.runs.map((x) => x.meta)).filter(Boolean);
+const pct = (a, q) => { const v = [...a].sort((x, y) => x - y); return v.length ? v[Math.min(v.length - 1, Math.floor(q * v.length))] : null; };
+if (metas.length) {
+  summary.latencyP50 = pct(metas.map((m) => m.latencyMs), 0.5); summary.latencyP95 = pct(metas.map((m) => m.latencyMs), 0.95);
+  summary.avgTokens = Math.round(mean(metas.map((m) => m.totalTokens))); summary.avgCalls = +mean(metas.map((m) => m.calls)).toFixed(1);
+  lines.push(`## 4. Performance`, ``, `- Latency per answer: p50 **${(summary.latencyP50 / 1000).toFixed(1)}s**, p95 **${(summary.latencyP95 / 1000).toFixed(1)}s** (n=${metas.length})`, `- Tokens per answer: **${summary.avgTokens}** (${Math.round(mean(metas.map((m) => m.promptTokens)))} in / ${Math.round(mean(metas.map((m) => m.completionTokens)))} out) over ${summary.avgCalls} model calls`, ``);
+}
+summary.errors = errored.length;
+summary.flags = flagCounts;
 const report = lines.join('\n');
 fs.mkdirSync(path.join(dir, 'results'), { recursive: true });
 const stamp = new Date().toISOString().replace(/[:.]/g, '-');
 fs.writeFileSync(path.join(dir, 'results', `${stamp}.md`), report);
 fs.writeFileSync(path.join(dir, 'results', `${stamp}.raw.json`), JSON.stringify(results, null, 2));
+// ---- Append to the run history (read by scripts/report.js -> docs/PERFORMANCE.md)
+fs.appendFileSync(path.join(dir, 'results', 'history.jsonl'), JSON.stringify({ date: new Date().toISOString(), model: MODEL(), runsPerCase: RUNS, cases: cases.length, source: process.env.GITHUB_ACTIONS ? 'github-actions' : 'local', ...summary }) + '\n');
 console.log(report);
