@@ -1,0 +1,345 @@
+[
+  {
+    "c": {
+      "id": "cal-03-generic-fluff",
+      "group": "calibration",
+      "question": "Tell me about a time you used data to change a product decision.",
+      "answer": "I'm a very data driven person and I always believe in making decisions based on data. In my past roles I've always looked at the numbers and tried to do what's best for the customer and for the business. Data is really important to me and I think it helps teams align and move fast. I'm passionate about product and I love working with metrics, so I would say that using data is something I do every day and it has helped me be successful.",
+      "human": {
+        "relevance": 2,
+        "structure": 1,
+        "specificity": 1,
+        "impact": 1,
+        "clarity": 3
+      }
+    },
+    "runs": [
+      {
+        "evaluation": {
+          "scores": {
+            "relevance": 2,
+            "structure": 1,
+            "specificity": 1,
+            "impact": 1,
+            "clarity": 3
+          },
+          "strengths": [
+            {
+              "criterion": "clarity",
+              "quote": "I'm a very data driven person and I always believe in making decisions based on data.",
+              "comment": "The candidate expresses a clear stance on data‑driven decision making, making the statement easy to understand."
+            }
+          ],
+          "gaps": [
+            {
+              "criterion": "relevance",
+              "quote": "I would say that using data is something I do every day and it has helped me be successful.",
+              "comment": "The answer does not describe a concrete instance where data changed a product decision, which is what was asked."
+            },
+            {
+              "criterion": "structure",
+              "quote": "I'm a very data driven person and I always believe in making decisions based on data.",
+              "comment": "No situation, action, or result is presented; the response is a flat statement without narrative flow."
+            },
+            {
+              "criterion": "specificity",
+              "quote": "In my past roles I've always looked at the numbers and tried to do what's best for the customer and for the business.",
+              "comment": "No concrete metrics, tools, experiments, or personal actions are detailed."
+            },
+            {
+              "criterion": "impact",
+              "quote": "it has helped me be successful.",
+              "comment": "No quantified business outcome (e.g., activation lift, revenue impact) is provided."
+            }
+          ],
+          "improved_answer": "At Acme Cloud I owned the onboarding funnel for our self‑serve product. We noticed activation was stuck at 31%, so I pulled Amplitude data and ran a cohort analysis that revealed users were dropping off during the setup wizard. I partnered with a designer and four engineers to redesign the wizard, creating two variants for an A/B test. Over 18 months we ran 14 tests, and the winning version lifted activation to 44%, a 13‑point increase. I presented the results to senior leadership, highlighting the revenue impact of faster activation. This data‑driven experiment directly changed the product roadmap and delivered measurable growth.",
+          "confidence": "high",
+          "technical_claims_to_verify": [],
+          "follow_up": "Can you walk me through the specific metrics you tracked, the hypothesis you formed, and how you decided which variant to ship after the A/B test?",
+          "summary": "The candidate speaks generally about being data‑driven but provides no specific example, actions, metrics, or outcomes, resulting in low scores across relevance, structure, specificity, and impact.",
+          "overall": 1.6
+        },
+        "flags": [
+          {
+            "type": "invented_numbers",
+            "detail": "The rewrite contained figures not found in your answer or resume (13). Replace them with real ones or remove them."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "c": {
+      "id": "cal-05-too-short",
+      "group": "calibration",
+      "question": "Why are you interested in this role?",
+      "answer": "I like growth and your company seems great.",
+      "human": {
+        "relevance": 2,
+        "structure": 1,
+        "specificity": 1,
+        "impact": 1,
+        "clarity": 2
+      }
+    },
+    "runs": [
+      {
+        "evaluation": {
+          "scores": {
+            "relevance": 2,
+            "structure": 1,
+            "specificity": 1,
+            "impact": 1,
+            "clarity": 3
+          },
+          "strengths": [
+            {
+              "criterion": "clarity",
+              "quote": "I like growth and your company seems great.",
+              "comment": "The response is concise and easy to understand."
+            }
+          ],
+          "gaps": [
+            {
+              "criterion": "relevance",
+              "quote": "I like growth and your company seems great.",
+              "comment": "Does not connect interest to specific responsibilities or company mission."
+            },
+            {
+              "criterion": "structure",
+              "quote": "I like growth and your company seems great.",
+              "comment": "No situation, action, or result described."
+            },
+            {
+              "criterion": "specificity",
+              "quote": "I like growth and your company seems great.",
+              "comment": "Provides no concrete details, tools, or past experiences."
+            },
+            {
+              "criterion": "impact",
+              "quote": "I like growth and your company seems great.",
+              "comment": "No business outcomes or metrics are mentioned."
+            }
+          ],
+          "improved_answer": "I’m excited about this role because it sits at the heart of growth for a self‑serve B2B SaaS product—exactly where I’ve focused my work at Acme Cloud. There I owned the onboarding funnel, ran 14 A/B tests over 18 months, and led a redesign of the setup wizard that lifted activation from 31% to 44%. I love digging into data, collaborating with design and engineering, and turning insights into experiments that move key metrics. Northwind’s focus on activation and retention aligns with the impact I’ve already delivered, and I’m eager to bring that experience to help drive even stronger growth for your customers.",
+          "confidence": "high",
+          "technical_claims_to_verify": [],
+          "follow_up": "Can you walk me through a specific experiment you ran that improved activation, including how you defined the hypothesis, the metrics you tracked, and the results you achieved?",
+          "summary": "The answer is brief and clear but lacks relevance, structure, specificity, and impact, offering no concrete connection to the role.",
+          "overall": 1.6
+        },
+        "flags": [
+          {
+            "type": "too_short",
+            "detail": "Only 8 words — scores capped; there's not enough to evaluate."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "c": {
+      "id": "cal-06-off-topic",
+      "group": "calibration",
+      "question": "How would you prioritise a backlog of competing feature requests?",
+      "answer": "I really enjoy hiking on weekends and I've been to most national parks in the country. My favorite was Yosemite because of the granite cliffs. I also like cooking, especially Thai food, and I recently took a class on making curry from scratch.",
+      "human": {
+        "relevance": 1,
+        "structure": 2,
+        "specificity": 2,
+        "impact": 1,
+        "clarity": 3
+      }
+    },
+    "runs": [
+      {
+        "evaluation": {
+          "scores": {
+            "relevance": 1,
+            "structure": 1,
+            "specificity": 1,
+            "impact": 1,
+            "clarity": 2
+          },
+          "strengths": [
+            {
+              "criterion": "clarity",
+              "quote": "I really enjoy hiking on weekends and I've been to most national parks in the country.",
+              "comment": "The answer is easy to understand and free of filler, though unrelated."
+            }
+          ],
+          "gaps": [
+            {
+              "criterion": "relevance",
+              "quote": "I really enjoy hiking on weekends and I've been to most national parks in the country.",
+              "comment": "The response does not address the interview question about backlog prioritisation."
+            },
+            {
+              "criterion": "structure",
+              "quote": "I also like cooking, especially Thai food, and I recently took a class on making curry from scratch.",
+              "comment": "No situation, action, or result related to product management is presented."
+            },
+            {
+              "criterion": "specificity",
+              "quote": "My favorite was Yosemite because of the granite cliffs.",
+              "comment": "Provides personal details but no concrete product‑related actions, tools, or decisions."
+            },
+            {
+              "criterion": "impact",
+              "quote": "I recently took a class on making curry from scratch.",
+              "comment": "No business outcome or measurable impact is described."
+            }
+          ],
+          "improved_answer": "When faced with a backlog of competing feature requests, I start by aligning each item with our product’s North Star metrics—activation, retention, and revenue. I gather quantitative data: usage frequency, impact estimates from A/B test simulations, and qualitative input from customer interviews. I then score each request using a weighted RICE framework (Reach, Impact, Confidence, Effort), documenting assumptions in a shared spreadsheet. High‑scoring items are presented to stakeholders in a brief deck that highlights expected uplift (e.g., a 5% activation increase) and required engineering effort. I prioritize the top‑ranked features for the next sprint, while lower‑scoring items go into a discovery backlog for further validation. This process ensures data‑driven decisions, cross‑functional alignment, and clear communication with executives.",
+          "confidence": "high",
+          "technical_claims_to_verify": [],
+          "follow_up": "Can you walk me through a specific example where you applied a prioritisation framework to a real backlog and what the measurable outcome was?",
+          "summary": "The candidate gave a personal hobby description that is unrelated to the backlog prioritisation question, lacking relevance, structure, specificity, and impact.",
+          "overall": 1.2
+        },
+        "flags": [
+          {
+            "type": "invented_numbers",
+            "detail": "The rewrite contained figures not found in your answer or resume (5%). Replace them with real ones or remove them."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "c": {
+      "id": "adv-01-buzzword-confident",
+      "group": "adversarial",
+      "failure_mode": "Polished buzzwords mistaken for substance",
+      "question": "Tell me about a time you drove business impact.",
+      "answer": "I leverage a holistic, data-driven, customer-centric approach to unlock synergies across the organization and deliver best-in-class outcomes. By empowering cross-functional teams and driving alignment on a scalable north-star vision, I consistently move the needle and create transformative value for stakeholders. My results speak for themselves, and I am highly confident I can bring this same impactful mindset to Northwind.",
+      "expect": {
+        "maxOverall": 2.4,
+        "maxCriteria": {
+          "specificity": 2,
+          "impact": 2
+        }
+      }
+    },
+    "runs": [
+      {
+        "evaluation": {
+          "scores": {
+            "relevance": 2,
+            "structure": 2,
+            "specificity": 1,
+            "impact": 1,
+            "clarity": 3
+          },
+          "strengths": [
+            {
+              "criterion": "clarity",
+              "quote": "I leverage a holistic, data-driven, customer-centric approach to unlock synergies across the organization",
+              "comment": "The language is concise and easy to follow, with a clear sentence structure."
+            }
+          ],
+          "gaps": [
+            {
+              "criterion": "relevance",
+              "quote": "My results speak for themselves, and I am highly confident I can bring this same impactful mindset to Northwind.",
+              "comment": "The answer does not describe a specific instance of driving business impact as the question asked."
+            },
+            {
+              "criterion": "structure",
+              "quote": "By empowering cross-functional teams and driving alignment on a scalable north-star vision, I consistently move the needle",
+              "comment": "There is no clear situation‑action‑result arc; the narrative is abstract."
+            },
+            {
+              "criterion": "specificity",
+              "quote": "I consistently move the needle and create transformative value for stakeholders.",
+              "comment": "No concrete details, metrics, tools, or personal actions are provided."
+            },
+            {
+              "criterion": "impact",
+              "quote": "My results speak for themselves",
+              "comment": "No quantified outcome or business impact is presented."
+            }
+          ],
+          "improved_answer": "At Acme Cloud I owned the onboarding funnel for our self‑serve product. We were seeing a 31% activation rate, so I mapped the user journey, identified friction points, and partnered with a designer and four engineers to redesign the setup wizard. I ran 14 A/B tests over 18 months, iterating on copy, layout, and onboarding steps. The final version lifted activation to 44%, a 13‑point increase that contributed to a measurable rise in monthly recurring revenue. I also built a churn‑risk dashboard with the data team, enabling customer success to proactively engage 40 at‑risk accounts each quarter, reducing churn risk by roughly 20%. This experience shows my ability to use data, run experiments, and drive cross‑functional alignment to deliver tangible business results.",
+          "confidence": "medium",
+          "technical_claims_to_verify": [],
+          "follow_up": "Can you walk me through one of those A/B tests—what hypothesis you tested, how you designed the experiment, and what the key learnings were?",
+          "summary": "The candidate speaks in generic, high‑level terms and fails to give a concrete example, metrics, or personal actions, resulting in low scores for relevance, structure, specificity, and impact.",
+          "overall": 1.8
+        },
+        "flags": [
+          {
+            "type": "invented_numbers",
+            "detail": "The rewrite contained figures not found in your answer or resume (13). Replace them with real ones or remove them."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "c": {
+      "id": "adv-05-no-invented-numbers",
+      "group": "adversarial",
+      "failure_mode": "Improved answer fabricates metrics the candidate never gave",
+      "question": "Tell me about a project you're proud of.",
+      "answer": "I redesigned the onboarding for our product. It was a big project with designers and engineers and I coordinated it. People liked the new version and it made onboarding smoother and the team was happy with how it went.",
+      "expect": {
+        "noInventedNumbers": true
+      }
+    },
+    "runs": [
+      {
+        "evaluation": {
+          "scores": {
+            "relevance": 5,
+            "structure": 2,
+            "specificity": 2,
+            "impact": 2,
+            "clarity": 3
+          },
+          "strengths": [
+            {
+              "criterion": "relevance",
+              "quote": "I redesigned the onboarding for our product.",
+              "comment": "Directly addresses the prompt to describe a project."
+            },
+            {
+              "criterion": "clarity",
+              "quote": "People liked the new version and it made onboarding smoother and the team was happy with how it went.",
+              "comment": "Clear, simple language; easy to follow."
+            }
+          ],
+          "gaps": [
+            {
+              "criterion": "structure",
+              "quote": "It was a big project with designers and engineers and I coordinated it.",
+              "comment": "No explicit situation, task, action, result sequence; missing clear arc."
+            },
+            {
+              "criterion": "specificity",
+              "quote": "People liked the new version and it made onboarding smoother",
+              "comment": "Lacks concrete details such as team size, tools, metrics, or personal contributions."
+            },
+            {
+              "criterion": "impact",
+              "quote": "the team was happy with how it went",
+              "comment": "No quantified business outcome (e.g., activation rate change)."
+            }
+          ],
+          "improved_answer": "I led the redesign of our self‑serve onboarding funnel. The existing flow had a 31% activation rate, so I scoped the project, partnered with one designer and four engineers, and defined the experiment plan in Amplitude. We rolled out a new setup wizard, ran an A/B test, and saw activation climb to 44% over 18 months—a 13‑point lift. I also built a churn‑risk dashboard with the data team to surface at‑risk users, which helped the CS team prioritize 40 accounts each quarter. The launch reduced onboarding friction, earned positive feedback from users, and contributed to a measurable increase in activation.",
+          "confidence": "medium",
+          "technical_claims_to_verify": [],
+          "follow_up": "Can you walk me through the specific metrics you tracked and how you measured the 13‑point activation lift after the redesign?",
+          "summary": "The answer is on-topic and clear but missing structure, concrete details, and measurable impact.",
+          "overall": 2.8
+        },
+        "flags": [
+          {
+            "type": "invented_numbers",
+            "detail": "The rewrite contained figures not found in your answer or resume (13). Replace them with real ones or remove them."
+          }
+        ]
+      }
+    ]
+  }
+]

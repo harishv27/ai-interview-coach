@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Interview Coach</title>
+<style>
+  :root { --bg:#f7f7f5; --card:#fff; --ink:#1c1c1a; --mute:#6b6b66; --line:#e4e4df; --accent:#2f5bea; --good:#1f8a4c; --warn:#b7791f; --bad:#c0392b; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#151514; --card:#1e1e1c; --ink:#ecece8; --mute:#9a9a94; --line:#2f2f2c; --accent:#7b9bff; --good:#4cc380; --warn:#e0a84a; --bad:#ef6b5c; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 -apple-system, system-ui, "Segoe UI", sans-serif; }
+  main { max-width: 780px; margin: 0 auto; padding: 24px 16px 80px; }
+  h1 { font-size: 22px; margin: 0 0 4px; } h2 { font-size: 17px; margin: 0 0 8px; } h3 { font-size: 14px; margin: 16px 0 6px; text-transform: uppercase; letter-spacing: .04em; color: var(--mute); }
+  .sub { color: var(--mute); margin: 0 0 20px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px; margin-bottom: 16px; }
+  label { display:block; font-weight:600; margin: 14px 0 6px; font-size: 14px; }
+  input[type=text], select, textarea { width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--ink); font:inherit; }
+  textarea { resize: vertical; min-height: 110px; }
+  button { font:inherit; border:1px solid var(--line); background:var(--card); color:var(--ink); padding:9px 16px; border-radius:8px; cursor:pointer; }
+  button.primary { background: var(--accent); border-color: var(--accent); color:#fff; font-weight:600; }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  button.rec { border-color: var(--bad); color: var(--bad); } button.rec.on { background: var(--bad); color:#fff; }
+  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .hint { font-size: 13px; color: var(--mute); }
+  .hidden { display:none !important; }
+  .progress { font-size: 13px; color: var(--mute); margin-bottom: 6px; }
+  .q { font-size: 20px; font-weight: 600; margin: 4px 0 12px; }
+  .badge { display:inline-block; font-size:12px; padding:2px 8px; border-radius:99px; border:1px solid var(--line); color:var(--mute); }
+  .bar { display:grid; grid-template-columns: 130px 1fr 28px; gap:10px; align-items:center; font-size:14px; margin: 4px 0; }
+  .bar .track { height:8px; background: var(--line); border-radius:99px; overflow:hidden; } .bar .fill { height:100%; background: var(--accent); }
+  .overall { font-size: 34px; font-weight: 700; } .overall small { font-size: 15px; color: var(--mute); font-weight: 400; }
+  blockquote { margin: 4px 0; padding: 4px 10px; border-left: 3px solid var(--line); color: var(--mute); font-style: italic; }
+  .item { margin: 8px 0; } .item b.good { color: var(--good); } .item b.gap { color: var(--warn); }
+  .flag { background: color-mix(in srgb, var(--warn) 14%, transparent); border: 1px solid var(--warn); border-radius: 8px; padding: 8px 12px; font-size: 14px; margin: 6px 0; }
+  .improved { background: var(--bg); border-radius: 8px; padding: 12px; white-space: pre-wrap; }
+  .followup { border-left: 4px solid var(--accent); padding-left: 12px; margin-top: 14px; }
+  .rate button.sel { background: var(--accent); color:#fff; border-color: var(--accent); }
+  .err { color: var(--bad); margin-top: 10px; }
+  details summary { cursor: pointer; color: var(--mute); font-size: 14px; }
+  .spinner { display:inline-block; width:14px; height:14px; border:2px solid var(--line); border-top-color: var(--accent); border-radius:50%; animation: spin .8s linear infinite; vertical-align: -2px; margin-right: 8px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<main>
+  <h1>AI Interview Coach</h1>
+  <p class="sub">Upload your resume, paste the job, and practise a tailored mock interview with scored, evidence-backed feedback.</p>
+  <div id="banner" class="flag hidden"></div>
+
+  <!-- SETUP -->
+  <section id="setup" class="card">
+    <h2>1. Set up your interview</h2>
+    <label for="resumeFile">Resume (PDF or .txt) — or paste below</label>
+    <input id="resumeFile" type="file" accept=".pdf,.txt,.md">
+    <textarea id="resume" placeholder="Resume text will appear here (you can edit it)"></textarea>
+    <label for="jd">Job description</label>
+    <textarea id="jd" placeholder="Paste the job description"></textarea>
+    <div class="row">
+      <div style="flex:1;min-width:200px"><label for="role">Target role</label><input id="role" type="text" placeholder="e.g. Product Manager"></div>
+      <div><label for="count">Questions</label><select id="count"><option>3</option><option selected>5</option><option>7</option></select></div>
+    </div>
+    <label><input id="voice" type="checkbox"> Voice mode (AI speaks questions; you answer by mic — Chrome/Edge/Safari)</label>
+    <p class="hint">Resume and answers are sent to Claude to generate feedback. Don't include anything you wouldn't want processed.</p>
+    <button id="startBtn" class="primary">Start mock interview</button>
+    <div id="setupErr" class="err"></div>
+  </section>
+
+  <!-- INTERVIEW -->
+  <section id="interview" class="hidden">
+    <div class="card">
+      <div class="progress" id="progress"></div>
+      <div class="q" id="question"></div>
+      <div class="row" style="margin-bottom:8px"><span class="badge" id="qtype"></span><button id="replay" class="hidden">🔊 Replay</button></div>
+      <textarea id="answer" placeholder="Type your answer, or use the mic…"></textarea>
+      <div class="row" style="margin-top:10px">
+        <button id="mic" class="rec hidden">🎙 Start speaking</button>
+        <button id="submit" class="primary">Submit answer</button>
+        <span id="busy" class="hint hidden"><span class="spinner"></span>Evaluating…</span>
+      </div>
+      <div class="hint" id="micHint"></div>
+      <div id="ansErr" class="err"></div>
+    </div>
+    <div id="feedback" class="hidden"></div>
+  </section>
+
+  <!-- RESULTS -->
+  <section id="results" class="hidden"></section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const S = { criteria: [], questions: [], idx: 0, turns: [], sessionId: crypto.randomUUID(), current: null, voice: false, inputMode: 'text' };
+
+async function api(path, body) {
+  const r = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.error || 'Request failed');
+  return j;
+}
+
+fetch('/api/config').then((r) => r.json()).then((c) => {
+  S.criteria = c.criteria;
+  if (!c.keyConfigured) { $('banner').textContent = 'No API key is set on the server. Add it to .env and restart.'; $('banner').classList.remove('hidden'); }
+});
+
+/* ---------- Voice ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec, recOn = false, baseText = '';
+function speak(text) {
+  if (!S.voice || !('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text); u.rate = 1; speechSynthesis.speak(u);
+}
+function setupMic() {
+  if (!SR) { $('micHint').textContent = 'Speech recognition isn’t supported in this browser — type your answer instead.'; return; }
+  $('mic').classList.remove('hidden');
+  rec = new SR(); rec.continuous = true; rec.interimResults = true; rec.lang = 'en-US';
+  rec.onresult = (e) => {
+    let t = ''; for (let i = 0; i < e.results.length; i++) t += e.results[i][0].transcript;
+    $('answer').value = (baseText ? baseText + ' ' : '') + t.trim(); S.inputMode = 'voice';
+  };
+  rec.onend = () => { recOn = false; $('mic').textContent = '🎙 Start speaking'; $('mic').classList.remove('on'); };
+  rec.onerror = (e) => { $('micHint').textContent = 'Mic error: ' + e.error; };
+}
+$('mic').onclick = () => {
+  speechSynthesis?.cancel();
+  if (recOn) { rec.stop(); return; }
+  baseText = $('answer').value.trim(); rec.start(); recOn = true;
+  $('mic').textContent = '⏹ Stop'; $('mic').classList.add('on');
+  $('micHint').textContent = 'Listening… you can edit the transcript before submitting.';
+};
+$('replay').onclick = () => speak(S.current.question);
+
+/* ---------- Setup ---------- */
+$('resumeFile').onchange = async (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  const fd = new FormData(); fd.append('resume', f);
+  $('setupErr').textContent = '';
+  const r = await fetch('/api/resume', { method: 'POST', body: fd }); const j = await r.json();
+  if (!r.ok) { $('setupErr').textContent = j.error; return; }
+  $('resume').value = j.text;
+};
+$('startBtn').onclick = async () => {
+  const resume = $('resume').value.trim(), jd = $('jd').value.trim(), role = $('role').value.trim();
+  if (!resume || !jd || !role) { $('setupErr').textContent = 'Please provide a resume, job description and target role.'; return; }
+  S.role = role; S.resume = resume; S.jd = jd; S.voice = $('voice').checked;
+  $('startBtn').disabled = true; $('startBtn').innerHTML = '<span class="spinner"></span>Preparing your interview…'; $('setupErr').textContent = '';
+  try {
+    const { questions } = await api('/api/start', { resume, jd, role, count: $('count').value });
+    S.questions = questions; S.idx = 0; S.turns = [];
+    $('setup').classList.add('hidden'); $('interview').classList.remove('hidden');
+    if (S.voice) setupMic(); else { $('mic').classList.add('hidden'); }
+    $('replay').classList.toggle('hidden', !S.voice);
+    askMain();
+  } catch (e) { $('setupErr').textContent = e.message; }
+  $('startBtn').disabled = false; $('startBtn').textContent = 'Start mock interview';
+};
+
+/* ---------- Interview loop ---------- */
+function ask(question, type, isFollowUp) {
+  S.current = { question, isFollowUp }; S.inputMode = 'text';
+  $('progress').textContent = `Question ${S.idx + 1} of ${S.questions.length}${isFollowUp ? ' · follow-up' : ''}`;
+  $('question').textContent = question; $('qtype').textContent = isFollowUp ? 'follow-up' : type;
+  $('answer').value = ''; $('answer').disabled = false; $('submit').disabled = false;
+  $('feedback').classList.add('hidden'); $('ansErr').textContent = ''; $('micHint').textContent = '';
+  speak(question); $('answer').focus();
+}
+const askMain = () => ask(S.questions[S.idx].question, S.questions[S.idx].type, false);
+
+$('submit').onclick = async () => {
+  if (recOn) rec.stop();
+  speechSynthesis?.cancel();
+  const answer = $('answer').value.trim(); if (!answer) { $('ansErr').textContent = 'Please give an answer first.'; return; }
+  $('submit').disabled = true; $('busy').classList.remove('hidden'); $('ansErr').textContent = '';
+  try {
+    const { evaluation, flags } = await api('/api/answer', { resume: S.resume, jd: S.jd, role: S.role, question: S.current.question, answer, isFollowUp: S.current.isFollowUp, sessionId: S.sessionId, inputMode: S.inputMode });
+    const turn = { question: S.current.question, answer, isFollowUp: S.current.isFollowUp, evaluation, flags };
+    S.turns.push(turn); $('answer').disabled = true; renderFeedback(turn);
+  } catch (e) { $('ansErr').textContent = e.message; $('submit').disabled = false; }
+  $('busy').classList.add('hidden');
+};
+
+function renderFeedback(t) {
+  const ev = t.evaluation;
+  const bars = S.criteria.map((c) => `<div class="bar"><span>${esc(c.label)}</span><div class="track"><div class="fill" style="width:${ev.scores[c.key] * 20}%"></div></div><b>${ev.scores[c.key]}</b></div>`).join('');
+  const items = (arr, cls, label) => arr.length ? `<h3>${label}</h3>` + arr.map((x) => `<div class="item"><b class="${cls}">${esc(S.criteria.find((c) => c.key === x.criterion)?.label || x.criterion)}:</b> ${esc(x.comment)}<blockquote>“${esc(x.quote)}”</blockquote></div>`).join('') : '';
+  const flags = t.flags.map((f) => `<div class="flag">⚠️ ${esc(f.detail)}</div>`).join('');
+  const claims = ev.technical_claims_to_verify.length ? `<h3>Please double-check</h3>` + ev.technical_claims_to_verify.map((c) => `<div class="item">“${esc(c.quote)}” — ${esc(c.concern)}</div>`).join('') : '';
+  const hasFollow = !t.isFollowUp && ev.follow_up;
+  const last = S.idx === S.questions.length - 1;
+  const el = $('feedback');
+  el.innerHTML = `<div class="card">
+    <div class="overall">${ev.overall} <small>/ 5 · coach confidence: ${esc(ev.confidence)}</small></div>
+    <p>${esc(ev.summary)}</p>${flags}${bars}
+    ${items(ev.strengths, 'good', 'What worked')}${items(ev.gaps, 'gap', 'What to improve')}${claims}
+    <h3>Stronger version of your answer</h3>
+    <div class="improved">${esc(ev.improved_answer)}</div>
+    <p class="hint">Built only from your answer and resume. Anything in [brackets] is a detail only you can fill in — don't use a number that isn't true.</p>
+    <h3>Was this feedback accurate?</h3>
+    <div class="rate row" id="rate">
+      <button data-r="accurate">👍 Accurate</button><button data-r="partly">🤔 Partly</button><button data-r="wrong">👎 Wrong / misleading</button>
+    </div>
+    <input id="rateNote" type="text" class="hidden" placeholder="What was wrong or missing? (optional)" style="margin-top:8px">
+    ${hasFollow ? `<div class="followup"><b>Follow-up:</b> ${esc(ev.follow_up)}</div>` : ''}
+    <div class="row" style="margin-top:14px">
+      ${hasFollow ? '<button id="doFollow" class="primary">Answer follow-up</button>' : ''}
+      <button id="next" class="${hasFollow ? '' : 'primary'}">${last ? 'Finish & see debrief' : 'Next question →'}</button>
+    </div></div>`;
+  el.classList.remove('hidden'); el.scrollIntoView({ behavior: 'smooth' });
+  if (S.voice) speak(ev.summary + (hasFollow ? ' Follow-up: ' + ev.follow_up : ''));
+  el.querySelectorAll('#rate button').forEach((b) => b.onclick = () => {
+    el.querySelectorAll('#rate button').forEach((x) => x.classList.remove('sel')); b.classList.add('sel');
+    $('rateNote').classList.remove('hidden'); sendRating(t, b.dataset.r);
+    $('rateNote').onchange = () => sendRating(t, b.dataset.r);
+  });
+  if (hasFollow) $('doFollow').onclick = () => { speechSynthesis?.cancel(); ask(ev.follow_up, 'follow-up', true); };
+  $('next').onclick = () => { speechSynthesis?.cancel(); if (last) finish(); else { S.idx++; askMain(); } };
+}
+const sendRating = (t, rating) => fetch('/api/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: S.sessionId, question: t.question, rating, note: $('rateNote')?.value || '' }) });
+
+async function finish() {
+  $('interview').classList.add('hidden'); const r = $('results'); r.classList.remove('hidden');
+  r.innerHTML = '<div class="card"><span class="spinner"></span>Preparing your debrief…</div>';
+  const main = S.turns.filter((t) => !t.isFollowUp);
+  const avg = (k) => (S.turns.reduce((a, t) => a + t.evaluation.scores[k], 0) / S.turns.length);
+  const bars = S.criteria.map((c) => `<div class="bar"><span>${esc(c.label)}</span><div class="track"><div class="fill" style="width:${avg(c.key) * 20}%"></div></div><b>${avg(c.key).toFixed(1)}</b></div>`).join('');
+  let d; try { d = await api('/api/summary', { role: S.role, turns: S.turns.map((t) => ({ question: t.question, isFollowUp: t.isFollowUp, evaluation: { scores: t.evaluation.scores, summary: t.evaluation.summary } })) }); } catch (e) { d = { headline: 'Debrief unavailable', top_strengths: [], top_priorities: [], practice_plan: e.message }; }
+  const overall = (S.turns.reduce((a, t) => a + t.evaluation.overall, 0) / S.turns.length).toFixed(1);
+  r.innerHTML = `<div class="card"><h2>${esc(d.headline)}</h2><div class="overall">${overall} <small>/ 5 average over ${S.turns.length} answers (${main.length} questions)</small></div>${bars}
+    <h3>Strengths</h3><ul>${d.top_strengths.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>
+    <h3>Practise next</h3><ol>${d.top_priorities.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>
+    <p>${esc(d.practice_plan)}</p><button class="primary" onclick="location.reload()">Start a new interview</button></div>
+    <details class="card"><summary>Full transcript</summary>${S.turns.map((t) => `<h3>${t.isFollowUp ? 'Follow-up' : 'Question'}: ${esc(t.question)}</h3><p>${esc(t.answer)}</p>`).join('')}</details>`;
+}
+</script>
+</body>
+</html>

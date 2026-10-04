@@ -1,0 +1,22 @@
+{
+  "name": "ai-interview-coach",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test test/",
+    "start": "node server.js",
+    "eval": "node eval/run.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.131.0",
+    "dotenv": "^18.0.5",
+    "express": "^5.2.1",
+    "multer": "^2.4.0",
+    "pdf-parse": "^2.4.5"
+  }
+}

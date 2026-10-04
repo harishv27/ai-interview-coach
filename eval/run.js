@@ -1,0 +1,94 @@
+// Usage: npm run eval            (all cases, 1 run each)
+//        node eval/run.js --runs 3 --only cal   (repeatability on calibration set)
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { evaluateAnswer } from '../lib/coach.js';
+import { hasKey, MODEL } from '../lib/llm.js';
+import { CRITERIA_KEYS } from '../lib/rubric.js';
+import { inventedNumbers } from '../lib/guards.js';
+import { ROLE, RESUME, JD } from './fixtures.js';
+
+const dir = path.dirname(fileURLToPath(import.meta.url));
+const arg = (n, d) => { const i = process.argv.indexOf('--' + n); return i > -1 ? process.argv[i + 1] : d; };
+const RUNS = +arg('runs', 1), ONLY = arg('only', '');
+if (!hasKey()) { console.error('Set GROQ_API_KEY first (see .env.example).'); process.exit(1); }
+
+const cases = JSON.parse(fs.readFileSync(path.join(dir, 'cases.json'), 'utf8')).filter((c) => c.id.startsWith(ONLY));
+const mean = (a) => a.reduce((x, y) => x + y, 0) / (a.length || 1);
+const sd = (a) => { const m = mean(a); return Math.sqrt(mean(a.map((x) => (x - m) ** 2))); };
+const humanOverall = (h) => mean(CRITERIA_KEYS.map((k) => h[k]));
+
+async function runCase(c) {
+  const runs = [];
+  let error;
+  for (let i = 0; i < RUNS; i++) { try { runs.push(await evaluateAnswer({ resume: RESUME, jd: JD, role: ROLE, question: c.question, answer: c.answer })); } catch (e) { error = e.message; } }
+  return { c, runs, error };
+}
+async function pool(items, n, fn) {
+  const out = []; let i = 0;
+  await Promise.all(Array.from({ length: n }, async () => { while (i < items.length) { const k = i++; out[k] = await fn(items[k]); } }));
+  return out;
+}
+
+const all_ = await pool(cases, 1, runCase);
+const errored = all_.filter((r) => !r.runs.length);
+const results = all_.filter((r) => r.runs.length);
+const lines = [`# Eval report`, ``, `- Model: \`${MODEL()}\`  · Runs/case: ${RUNS}  · Date: ${new Date().toISOString()}`, ``];
+
+if (errored.length) lines.push(`## 0. Cases that errored (no usable output)`, ``, ...errored.map((r) => `- ${r.c.id}: ${r.error}`), ``);
+// ---- Calibration vs human labels
+const cal = results.filter((r) => r.c.human);
+if (cal.length) {
+  const err = Object.fromEntries(CRITERIA_KEYS.map((k) => [k, []]));
+  const ov = [];
+  lines.push(`## 1. Calibration vs human labels (${cal.length} cases)`, ``, `| Case | Human overall | AI overall | Δ | per-criterion Δ (rel/str/spe/imp/cla) | σ across runs |`, `|---|---|---|---|---|---|`);
+  for (const { c, runs } of cal) {
+    const ai = Object.fromEntries(CRITERIA_KEYS.map((k) => [k, mean(runs.map((r) => r.evaluation.scores[k]))]));
+    const per = CRITERIA_KEYS.map((k) => { const d = ai[k] - c.human[k]; err[k].push(d); return (d >= 0 ? '+' : '') + d.toFixed(1); });
+    const aiO = mean(runs.map((r) => r.evaluation.overall)), hO = humanOverall(c.human);
+    ov.push({ a: aiO, h: hO });
+    lines.push(`| ${c.id} | ${hO.toFixed(1)} | ${aiO.toFixed(1)} | ${(aiO - hO >= 0 ? '+' : '') + (aiO - hO).toFixed(1)} | ${per.join(' / ')} | ${sd(runs.map((r) => r.evaluation.overall)).toFixed(2)} |`);
+  }
+  const all = Object.values(err).flat();
+  lines.push(``, `**MAE:** ${mean(all.map(Math.abs)).toFixed(2)} · **Bias (+ = AI too generous):** ${mean(all).toFixed(2)} · **Within ±1 of human:** ${(100 * all.filter((d) => Math.abs(d) <= 1).length / all.length).toFixed(0)}%`);
+  lines.push(``, `Per-criterion MAE: ${CRITERIA_KEYS.map((k) => `${k} ${mean(err[k].map(Math.abs)).toFixed(2)}`).join(' · ')}`, ``);
+  // pairwise ranking agreement
+  let agree = 0, tot = 0;
+  for (let i = 0; i < ov.length; i++) for (let j = i + 1; j < ov.length; j++) if (Math.abs(ov[i].h - ov[j].h) >= 0.6) { tot++; if ((ov[i].a - ov[j].a) * (ov[i].h - ov[j].h) > 0) agree++; }
+  lines.push(`**Ranking agreement** (pairs the humans separated by ≥0.6): ${agree}/${tot}`, ``);
+}
+
+// ---- Adversarial expectations
+const adv = results.filter((r) => r.c.expect);
+let pass = 0;
+if (adv.length) {
+  lines.push(`## 2. Failure-mode tests (${adv.length} cases)`, ``, `| Case | Failure mode probed | Result | Details |`, `|---|---|---|---|`);
+  for (const { c, runs } of adv) {
+    const e = c.expect, fails = [];
+    for (const { evaluation: ev, flags } of runs) {
+      if (e.maxOverall != null && ev.overall > e.maxOverall) fails.push(`overall ${ev.overall} > ${e.maxOverall}`);
+      if (e.minOverall != null && ev.overall < e.minOverall) fails.push(`overall ${ev.overall} < ${e.minOverall}`);
+      for (const [k, m] of Object.entries(e.maxCriteria || {})) if (ev.scores[k] > m) fails.push(`${k} ${ev.scores[k]} > ${m}`);
+      if (e.flagsTechnicalOrLowConfidence && !(ev.technical_claims_to_verify.length || ev.confidence !== 'high')) fails.push('confident, no claim flagged');
+      for (const q of e.noStrengthQuotes || []) if (ev.strengths.some((s) => s.quote.toLowerCase().includes(q.toLowerCase()))) fails.push(`praised: "${q}"`);
+      if (e.flagType && !flags.some((f) => f.type === e.flagType)) fails.push(`missing flag ${e.flagType}`);
+      if (e.noInventedNumbers && inventedNumbers(ev.improved_answer, c.answer, RESUME).length) fails.push('invented numbers in rewrite');
+    }
+    const ok = !fails.length; if (ok) pass++;
+    lines.push(`| ${c.id} | ${c.failure_mode} | ${ok ? '✅ pass' : '❌ FAIL'} | ${ok ? 'overall ' + mean(runs.map((r) => r.evaluation.overall)).toFixed(1) : [...new Set(fails)].join('; ')} |`);
+  }
+  lines.push(``, `**Failure-mode pass rate:** ${pass}/${adv.length}`, ``);
+}
+
+// ---- Guardrail activity
+const flagCounts = {};
+results.forEach((r) => r.runs.forEach((x) => x.flags.forEach((f) => (flagCounts[f.type] = (flagCounts[f.type] || 0) + 1))));
+lines.push(`## 3. Guardrail activity`, ``, Object.keys(flagCounts).length ? Object.entries(flagCounts).map(([k, v]) => `- \`${k}\`: ${v}`).join('\n') : '- none triggered', ``);
+
+const report = lines.join('\n');
+fs.mkdirSync(path.join(dir, 'results'), { recursive: true });
+const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+fs.writeFileSync(path.join(dir, 'results', `${stamp}.md`), report);
+fs.writeFileSync(path.join(dir, 'results', `${stamp}.raw.json`), JSON.stringify(results, null, 2));
+console.log(report);
