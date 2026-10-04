@@ -98,6 +98,6 @@ let readme = fs.readFileSync(readmePath, 'utf8');
 const block = `<!-- perf:start -->\n### Latest evaluation ${status(last)}\n\n${summary}\n\n[Full history & trend →](docs/PERFORMANCE.md) · [Usage & user feedback →](docs/USAGE.md)\n<!-- perf:end -->`;
 readme = readme.includes('<!-- perf:start -->')
   ? readme.replace(/<!-- perf:start -->[\s\S]*<!-- perf:end -->/, block)
-  : readme.replace('## Run it', `${block}\n\n## Run it`);
+  : readme.replace('## Getting started', `${block}\n\n## Getting started`);
 fs.writeFileSync(readmePath, readme);
 console.log('Wrote docs/PERFORMANCE.md and README summary');

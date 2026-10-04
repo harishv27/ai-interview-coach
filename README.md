@@ -1,8 +1,34 @@
 # AI Interview Coach
 
-[![CI](https://github.com/harishv27/ai-interview-coach/actions/workflows/ci.yml/badge.svg)](https://github.com/harishv27/ai-interview-coach/actions/workflows/ci.yml) [![Eval](https://github.com/harishv27/ai-interview-coach/actions/workflows/eval.yml/badge.svg)](https://github.com/harishv27/ai-interview-coach/actions/workflows/eval.yml) [**Live demo →**](https://ai-interview-coach-nine-plum.vercel.app)
+[![CI](https://github.com/harishv27/ai-interview-coach/actions/workflows/ci.yml/badge.svg)](https://github.com/harishv27/ai-interview-coach/actions/workflows/ci.yml)
+[![Eval](https://github.com/harishv27/ai-interview-coach/actions/workflows/eval.yml/badge.svg)](https://github.com/harishv27/ai-interview-coach/actions/workflows/eval.yml)
+[**Live demo**](https://ai-interview-coach-nine-plum.vercel.app)
 
-A web app that runs a tailored mock interview from your resume + a job description, scores each answer on an explicit rubric, asks follow-ups, and rewrites your answer — **plus the evaluation work that asks "what happens when the AI is confidently wrong?"**
+A mock-interview app for job seekers. You upload your resume, paste a job description and pick a role. The coach then asks questions tailored to both, scores each answer, asks a follow-up, and shows you a stronger version of what you said.
+
+Most "AI feedback" tools just sound confident. This project is as much about **checking the feedback** as generating it, so every score is backed by a quote from your own answer, and the app tells you when it isn't sure.
+
+## What it does
+
+- **Tailored questions** from your resume and the job posting, with a heads-up on the requirements your resume doesn't clearly cover.
+- **Text or voice.** In voice mode the question is read aloud and you answer with your microphone, using your browser's built-in speech tools.
+- **Scores on five criteria:** relevance, structure, specificity, business impact and clarity. Each is a 1–5 score with written definitions, so a "4" means the same thing every time (see `lib/rubric.js`).
+- **Evidence for everything.** Each strength and weakness quotes your exact words. The server checks the quote really is in your answer and drops it if not.
+- **A rewritten answer** built only from facts in your answer and resume. Anything unknown becomes a `[placeholder]` for you to fill in, never an invented number.
+- **Delivery stats:** filler words, speaking pace and overly long sentences.
+- **Retry any answer** and see whether your score improved. The debrief counts your best attempt.
+- **Progress tracking** stored in your browser only, plus a downloadable report and score card.
+- Focus modes (mixed, behavioural, technical, case), a tougher difficulty, and a light/dark theme.
+
+## How the feedback is kept honest
+
+The core question behind this project: *what happens when the feedback is confidently wrong?* The approach has three layers.
+
+1. **Clear rules in the prompt:** a hard cap per criterion (for example, no measurable result means impact can't exceed 3), a few worked examples, and an instruction to never state a technical correction as certain.
+2. **Checks in code after the model answers** (`lib/guards.js`): quotes must appear in the answer, very short answers can't score high, a high impact score needs an actual number, claims that contradict the resume cap the score, and any figure in the rewrite that isn't in your answer or resume is removed.
+3. **A second pass** where a separate call fact-checks the rewrite and strips anything unsupported.
+
+When something looks shaky, the app shows a confidence level and a list of reliability notes instead of hiding it. The details, including known failure modes and what was tried, are in [docs/failure-modes.md](docs/failure-modes.md) and [docs/evaluation-framework.md](docs/evaluation-framework.md).
 
 <!-- perf:start -->
 ### Latest evaluation ⚠️
@@ -22,50 +48,71 @@ A web app that runs a tailored mock interview from your resume + a job descripti
 [Full history & trend →](docs/PERFORMANCE.md) · [Usage & user feedback →](docs/USAGE.md)
 <!-- perf:end -->
 
-## Run it
+## Getting started
+
+You need Node 20 or newer and a [Groq](https://console.groq.com) API key (the free tier works).
+
 ```bash
+git clone https://github.com/harishv27/ai-interview-coach.git
+cd ai-interview-coach
 npm install
-cp .env.example .env     # add GROQ_API_KEY (or ANTHROPIC_API_KEY)
-npm start                # http://localhost:3000
+cp .env.example .env      # then add your GROQ_API_KEY
+npm start                 # http://localhost:3000
 ```
-### Configuration (env vars)
-| Var | Default | Purpose |
+
+Voice mode works best in Chrome, Edge or Safari. Typing works everywhere.
+
+### Configuration
+
+| Variable | Default | What it does |
 |---|---|---|
-| `GROQ_API_KEY` / `ANTHROPIC_API_KEY` | — | Model provider (Groq wins if both set) |
-| `GROQ_MODEL` / `GROQ_MODEL_FAST` | `openai/gpt-oss-120b` / `openai/gpt-oss-20b` | Scoring model / cheaper model for rewrite + fact-check |
-| `GROQ_TPM` | `7000` | Client-side tokens-per-minute throttle (Groq free tier caps at 8,000/min/model) |
-| `RATE_LIMIT_PER_HOUR` | `60` | Per-IP limit on LLM endpoints |
-| `DAILY_CAP` | `400` | App-wide daily cap on evaluated answers (spend guard) |
-| `UPSTASH_REDIS_REST_URL` / `_TOKEN` | — | Makes the limits **persistent across serverless instances** (free Upstash Redis). Without it, limits are per instance |
-| `LLM_MOCK=1` | — | Deterministic fake model for tests/offline UI work |
+| `GROQ_API_KEY` | none | Required |
+| `GROQ_MODEL` | `openai/gpt-oss-120b` | Model used for scoring |
+| `GROQ_MODEL_FAST` | `openai/gpt-oss-20b` | Smaller model for the rewrite and fact-check |
+| `GROQ_TPM` | `7000` | Local tokens-per-minute throttle. Groq's free tier allows 8,000 per minute per model |
+| `RATE_LIMIT_PER_HOUR` | `60` | Per-IP limit on model-backed endpoints |
+| `DAILY_CAP` | `400` | App-wide daily cap on scored answers |
+| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | none | Optional. Makes the limits shared across serverless instances |
+| `LLM_MOCK=1` | off | Use a fake model, handy for tests and offline UI work |
 
-Voice mode (checkbox on the setup screen) uses the browser's built-in speech synthesis + recognition — best in Chrome/Edge/Safari. Typing always works.
+## Tests and evaluation
 
-## What's here
+```bash
+npm test            # unit + API tests, no API key or network needed
+npm run eval        # runs the scoring evaluation against the live model
+npm run report      # regenerates docs/PERFORMANCE.md from the eval history
+npm run usage       # summarises local usage into docs/USAGE.md (counts only)
+```
+
+The evaluation has two parts: labelled answers to measure how closely the scores match human judgement, and adversarial cases (buzzword padding, injected instructions, invented numbers and so on) that must be handled safely. GitHub Actions runs the tests on every push and the full evaluation weekly.
+
+## Project layout
+
 | Path | Purpose |
 |---|---|
-| `public/index.html` | The app: setup → interview (text or voice) → per-answer feedback → debrief |
-| `lib/rubric.js` | **The definition of a good answer** (5 criteria, 1/3/5 anchors). Shared by the prompt, UI and eval |
-| `lib/coach.js` | Question planning, answer evaluation, session debrief (structured output via tool-use) |
-| `lib/guards.js` | Deterministic post-checks: quote verification, score caps, invented-number detection |
-| `eval/` | Labelled calibration set + adversarial failure-mode cases + runner (`npm run eval`) |
-| `test/` | Unit tests for guardrails, no API key needed (`npm test`) |
-| `lib/privacy.js`, `lib/delivery.js`, `lib/ratelimit.js` | PII redaction, filler/pace metrics, rate limit + daily cap |
-| `public/privacy.html` | Plain-language privacy page linked from the consent box |
-| `docs/PERFORMANCE.md` | **Auto-generated** eval trend, latency, tokens (`npm run report`) |
-| `docs/USAGE.md` | **Auto-generated** usage, reliability and user-rating stats (`npm run usage`) |
-| `.github/workflows/` | `ci.yml` (tests on push) · `eval.yml` (manual + weekly eval, publishes results to the run page) |
-| `docs/evaluation-framework.md` | Rubric rationale, metrics, how to run & read the eval |
-| `docs/failure-modes.md` | Failure taxonomy, mitigations, and a log to fill with observed results |
-| `docs/user-research.md` | Protocol, interview script and results template for 5 real job seekers |
-| `data/*.jsonl` | Local logs of turns and user accuracy ratings (git-ignored) — raw material for the research |
+| `public/` | The single-page front end and privacy page |
+| `server.js` | Express API (also runs on Vercel) |
+| `lib/rubric.js` | The definition of a good answer |
+| `lib/coach.js` | Question planning, scoring, rewriting, debrief |
+| `lib/guards.js` | Post-model checks |
+| `lib/llm.js` | Model client with throttling and usage metrics |
+| `lib/privacy.js`, `lib/delivery.js`, `lib/ratelimit.js` | Redaction, speech stats, rate limiting |
+| `eval/` | Labelled cases, adversarial cases, runner, results |
+| `scripts/` | Report generators |
+| `docs/` | Evaluation framework, failure modes, user-research kit, generated performance and usage pages |
 
-## Evidence workflow
-1. `npm run eval` → `eval/results/*.md` (calibration vs human labels, failure-mode pass rate). Paste into `docs/failure-modes.md`.
-2. Fix what fails, re-run, record before/after in the "Iteration log".
-3. Run 5 job-seeker sessions with `docs/user-research.md`; the in-app 👍/🤔/👎 ratings land in `data/feedback.jsonl`.
+## Privacy
 
-## Status
-- Works end to end on Groq (`openai/gpt-oss-120b`) or Anthropic. Eval baseline and iteration log are in `docs/failure-modes.md` (single human rater, 8 calibration + 7 adversarial cases).
-- Known gaps: the AI scores ~0.3 too generous; the quote-matching fix has a unit test but no full eval re-run; eval runs are slow and can hang on the API.
-- **Not yet done:** the 5 real job-seeker sessions (`docs/user-research.md` results table is intentionally empty).
+There are no accounts and no database. Emails, phone numbers and links are stripped from your text before it is sent to the model or logged, and your progress history lives only in your browser. See [public/privacy.html](public/privacy.html) for the plain-language version.
+
+## Limitations
+
+- Scores are an aid to practice, not a prediction of how a real interviewer will rate you. The model still leans a little generous.
+- The calibration labels come from a single rater so far. More independent raters would make the accuracy numbers more trustworthy.
+- Voice mode relies on the browser's speech recognition, so quality varies, and delivery stats are based on the transcript rather than the audio.
+- On Groq's free tier the app can score only about two answers a minute across all users.
+- The planned real-user testing sessions (see [docs/user-research.md](docs/user-research.md)) haven't happened yet, so there is no user feedback data to report.
+
+## Deploying
+
+The app runs on Vercel with no extra configuration (`vercel.json` is included). Add `GROQ_API_KEY` as an environment variable, and optionally the Upstash variables for shared rate limits.

@@ -14,7 +14,7 @@ Five criteria, each scored 1–5 with anchored descriptions (see `lib/rubric.js`
 Principles the evaluator is told to follow: score what was *said* not what a strong candidate *would* say; polish and length are not substance; most real answers land at 2–4; a 5 needs strong evidence.
 
 ## 2. Two layers of evaluation
-**A. Is the scoring accurate?** (`eval/cases.json`, `calibration` group) — answers with human labels per criterion. Metrics: MAE, bias (is the AI generous?), % within ±1, ranking agreement, run-to-run σ. **Caveat:** the shipped labels were written by the builder, a single rater. Replace/extend with ≥2 independent raters (e.g. a hiring manager and a recruiter) and report inter-rater agreement; the AI can't be expected to agree with humans more than they agree with each other.
+**A. Is the scoring accurate?** (`eval/cases.json`, `calibration` group) — answers with human labels per criterion. Metrics: MAE, bias (is the AI generous?), % within ±1, ranking agreement, run-to-run σ. **Caveat:** the shipped labels were written by the project author, a single rater. Replace/extend with ≥2 independent raters (e.g. a hiring manager and a recruiter) and report inter-rater agreement; the AI can't be expected to agree with humans more than they agree with each other.
 
 **B. Does it fail safely?** (`adversarial` group) — each case targets a named failure mode with a machine-checkable expectation. See `failure-modes.md`.
 
