@@ -14,9 +14,24 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 *
 app.use(express.json({ limit: '1mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-fs.mkdirSync(path.join(__dirname, 'data'), { recursive: true });
-const log = (file, obj) =>
-  fs.appendFile(path.join(__dirname, 'data', file), JSON.stringify({ ts: new Date().toISOString(), ...obj }) + '\n', () => {});
+const ON_VERCEL = Boolean(process.env.VERCEL);
+if (!ON_VERCEL) fs.mkdirSync(path.join(__dirname, 'data'), { recursive: true });
+const log = (file, obj) => {
+  const line = JSON.stringify({ ts: new Date().toISOString(), ...obj });
+  if (ON_VERCEL) return console.log(`[${file}] ${line}`); // read-only FS: use Vercel runtime logs
+  fs.appendFile(path.join(__dirname, 'data', file), line + '\n', () => {});
+};
+
+// Minimal per-IP rate limit for LLM endpoints (protects the API quota on a public deploy).
+const hits = new Map();
+const LIMIT = +process.env.RATE_LIMIT_PER_HOUR || 60;
+app.use('/api', (req, res, next) => {
+  if (req.method !== 'POST' || req.path === '/feedback' || req.path === '/resume') return next();
+  const ip = (req.headers['x-forwarded-for'] || req.ip || '').toString().split(',')[0].trim();
+  const now = Date.now(), arr = (hits.get(ip) || []).filter((t) => now - t < 3600e3);
+  if (arr.length >= LIMIT) return res.status(429).json({ error: 'Rate limit reached for this hour. Please try again later.' });
+  arr.push(now); hits.set(ip, arr); next();
+});
 
 const wrap = (fn) => async (req, res) => {
   try {
@@ -75,5 +90,8 @@ app.post('/api/feedback', (req, res) => {
   res.json({ ok: true });
 });
 
-const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`AI Interview Coach → http://localhost:${port}  (model: ${MODEL()})`));
+if (!ON_VERCEL) {
+  const port = process.env.PORT || 3000;
+  app.listen(port, () => console.log(`AI Interview Coach → http://localhost:${port}  (model: ${MODEL()})`));
+}
+export default app;
