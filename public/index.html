@@ -34,21 +34,7 @@
   html { scroll-behavior:smooth; }
   body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 Inter, -apple-system, system-ui, "Segoe UI", sans-serif; -webkit-font-smoothing:antialiased; }
   body::before { content:""; position:fixed; inset:0 0 auto 0; height:320px; z-index:-1; background:radial-gradient(60% 100% at 50% 0%, color-mix(in srgb, var(--brand) 16%, transparent), transparent); }
-  main { max-width:1180px; margin:0 auto; padding:20px 16px 96px; }
-  @media (min-width:700px){ main { padding:24px 32px 96px; } }
   :focus-visible { outline:3px solid color-mix(in srgb, var(--brand) 55%, transparent); outline-offset:2px; border-radius:8px; }
-
-  /* header + stepper */
-  header { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px 0 18px; flex-wrap:wrap; }
-  .logo { display:flex; align-items:center; gap:10px; font-weight:700; font-size:18px; letter-spacing:-.01em; }
-  .logo i { width:34px; height:34px; border-radius:10px; display:grid; place-items:center; font-style:normal; color:#fff; background:linear-gradient(135deg,var(--brand),var(--brand-2)); }
-  .hdr-r { display:flex; align-items:center; gap:10px; }
-  .theme { width:38px; height:38px; padding:0; border-radius:50%; display:grid; place-items:center; font-size:17px; line-height:1; }
-  .steps { display:flex; gap:6px; align-items:center; font-size:13px; color:var(--mute); }
-  .steps span { display:flex; align-items:center; gap:6px; padding:5px 11px; border-radius:99px; background:var(--soft); }
-  .steps span.on { background:var(--brand); color:var(--brand-ink); font-weight:600; }
-  .steps span.done { color:var(--good); }
-  @media (max-width:520px){ .steps span:not(.on) em { display:none; } }
 
   h1 { font-size:clamp(28px,5vw,40px); line-height:1.1; letter-spacing:-.03em; margin:6px 0 10px; }
   h1 b { background:linear-gradient(135deg,var(--brand),var(--brand-2)); -webkit-background-clip:text; background-clip:text; color:transparent; }
@@ -189,118 +175,197 @@
   .seg.wrap button { border-left:0; border-top:0; padding:11px 10px; }
   .seg.wrap button:nth-child(even) { border-left:1.5px solid var(--line); }
   .seg.wrap button:nth-child(n+3) { border-top:1.5px solid var(--line); }
-  /* ---- wide screens: use the space ---- */
-  #results { max-width:880px; margin:0 auto; }
-  @media (min-width:980px) {
-    .setup-grid { display:grid; grid-template-columns:minmax(0,5fr) minmax(0,7fr); gap:40px; align-items:start; }
-    .setup-grid .intro { position:sticky; top:24px; padding-top:16px; }
-    .setup-grid h1 { font-size:clamp(34px,3.6vw,48px); }
-    .setup-grid .lead { font-size:18px; }
-    .setup-grid .card.form { margin-bottom:0; }
+  /* ================= app shell ================= */
+  body::before { display:none; }
+  .app { display:grid; grid-template-columns:264px minmax(0,1fr); min-height:100vh; }
+  .side { position:sticky; top:0; height:100vh; overflow:auto; display:flex; flex-direction:column; gap:26px; padding:22px 16px; background:var(--card); border-right:1px solid var(--line); }
+  .logo { display:flex; align-items:center; gap:10px; font-weight:700; font-size:18px; letter-spacing:-.01em; padding:0 6px; }
+  .logo i { width:36px; height:36px; border-radius:11px; display:grid; place-items:center; font-style:normal; color:#fff; background:linear-gradient(135deg,var(--brand),var(--brand-2)); }
+  .nav { display:grid; gap:4px; }
+  .nav .ni { display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:12px; color:var(--mute); font-size:15px; }
+  .nav .ni .n { width:26px; height:26px; border-radius:50%; display:grid; place-items:center; font-size:13px; font-weight:700; background:var(--soft); flex:none; }
+  .nav .ni.on { background:color-mix(in srgb, var(--brand) 12%, transparent); color:var(--ink); font-weight:600; }
+  .nav .ni.on .n { background:var(--brand); color:var(--brand-ink); }
+  .nav .ni.done .n { background:var(--good); color:#fff; }
+  .outline-h { font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--mute); font-weight:600; margin:0 6px 8px; }
+  .outline { list-style:none; margin:0; padding:0; display:grid; gap:4px; }
+  .outline li { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:10px; font-size:14px; color:var(--mute); }
+  .outline li.cur { background:var(--soft); color:var(--ink); font-weight:600; }
+  .outline .dot { width:22px; height:22px; border-radius:50%; display:grid; place-items:center; font-size:12px; background:var(--soft); flex:none; }
+  .outline li.done .dot { background:var(--good); color:#fff; } .outline li.cur .dot { background:var(--brand); color:var(--brand-ink); }
+  .outline .t { flex:1; text-transform:capitalize; }
+  .side-foot { margin-top:auto; display:grid; gap:8px; font-size:13px; padding:0 6px; }
+  .side-foot a { color:var(--mute); text-decoration:none; } .side-foot a:hover { color:var(--brand); }
+  .col { min-width:0; }
+  .wrap { max-width:1320px; margin:0 auto; padding:0 32px; }
+  .top { display:flex; align-items:center; justify-content:space-between; gap:16px; padding-top:22px; padding-bottom:6px; }
+  .top h2 { margin:0; font-size:22px; letter-spacing:-.02em; } .top p { margin:2px 0 0; color:var(--mute); font-size:14px; }
+  .theme { width:40px; height:40px; padding:0; border-radius:50%; display:grid; place-items:center; font-size:17px; line-height:1; flex:none; }
+  .content { padding-top:18px; padding-bottom:80px; }
+
+  /* ---- setup dashboard ---- */
+  .banner-hero { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); gap:28px; align-items:center; padding:30px 34px; margin-bottom:24px; background:linear-gradient(135deg, color-mix(in srgb, var(--brand) 16%, var(--card)), color-mix(in srgb, var(--brand-2) 9%, var(--card))); }
+  .banner-hero h1 { font-size:clamp(28px,3vw,40px); margin:0 0 10px; }
+  .banner-hero .lead { margin:0 0 16px; }
+  .banner-hero .perks { margin:0; }
+  .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  .stat { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; }
+  .stat b { display:block; font-size:28px; letter-spacing:-.02em; line-height:1.1; } .stat span { font-size:13px; color:var(--mute); }
+  .setup-layout { display:grid; gap:24px; align-items:start; }
+  .side-col { display:grid; gap:16px; } .side-col .card { margin-bottom:0; }
+  .sec { border:0; padding:0; margin:0 0 28px; min-width:0; }
+  .sec-h { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+  .sec-n { width:28px; height:28px; border-radius:50%; background:var(--brand); color:var(--brand-ink); display:grid; place-items:center; font-weight:700; font-size:14px; flex:none; }
+  .sec-h h2 { margin:0; font-size:17px; } .sec-h p { margin:0; font-size:13px; color:var(--mute); }
+  .two { display:grid; gap:18px; } .two .field { margin-top:0; }
+  #jd { min-height:262px; } #resume { min-height:118px; }
+  .opts3 { display:grid; gap:18px; }
+  .rubric { list-style:none; margin:10px 0 0; padding:0; display:grid; gap:10px; }
+  .rubric li { display:grid; gap:1px; font-size:14px; padding-left:12px; border-left:3px solid var(--brand); } .rubric li span { color:var(--mute); font-size:13px; }
+  ol.expect { margin:10px 0 0; padding-left:20px; font-size:14px; color:var(--mute); display:grid; gap:6px; }
+  .hist.empty p { margin:6px 0 0; }
+
+  /* ---- results ---- */
+  .res-grid { display:grid; gap:24px; align-items:start; } .res-side { display:grid; gap:16px; } .res-side .card { margin-bottom:0; }
+
+  @media (min-width:900px) { .two { grid-template-columns:1fr 1fr; } .opts3 { grid-template-columns:1.2fr 1fr 1fr; } }
+  @media (min-width:1100px) {
+    .setup-layout { grid-template-columns:minmax(0,1fr) 340px; } .side-col { position:sticky; top:20px; }
+    .res-grid { grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr); } .res-side { position:sticky; top:20px; }
     #interview { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); grid-template-areas:"gaps fb" "q fb"; grid-template-rows:auto 1fr; gap:0 28px; align-items:start; }
-    #interview #gaps { grid-area:gaps; } #interview > .card { grid-area:q; position:sticky; top:16px; }
-    #interview #feedback { grid-area:fb; }
-    #interview #feedback:empty { min-height:280px; border:2px dashed var(--line); border-radius:var(--r); display:grid; place-content:center; color:var(--mute); font-size:15px; text-align:center; padding:24px; }
+    #interview #gaps { grid-area:gaps; } #interview > .card { grid-area:q; position:sticky; top:16px; } #interview #feedback { grid-area:fb; }
+    #interview #feedback:empty { min-height:300px; border:2px dashed var(--line); border-radius:var(--r); display:grid; place-content:center; color:var(--mute); font-size:15px; text-align:center; padding:24px; }
     #interview #feedback:empty::before { content:"Your scored feedback will appear here\A after you submit an answer."; white-space:pre-line; }
   }
+  /* tablet & phone: sidebar becomes a compact top bar */
+  @media (max-width:899px) {
+    .app { display:block; }
+    .side { position:static; height:auto; flex-direction:row; flex-wrap:wrap; align-items:center; gap:10px 18px; padding:12px 16px; border-right:0; border-bottom:1px solid var(--line); }
+    .nav { display:flex; gap:2px; margin-left:auto; } .nav .ni { padding:6px 10px; font-size:13px; gap:6px; } .nav .ni .n { width:20px; height:20px; font-size:11px; }
+    #outline, .side-foot { display:none; }
+    .wrap { padding:0 16px; } .banner-hero { grid-template-columns:1fr; padding:22px 20px; } .stat b { font-size:22px; }
+  }
+  @media (max-width:520px) { .nav .ni:not(.on) { font-size:0; gap:0; } .nav .ni:not(.on) .n { font-size:11px; } }
   @media (prefers-reduced-motion:reduce){ *{ animation:none !important; transition:none !important; } }
 </style>
 </head>
 <body>
-<main>
-  <header>
+<div class="app">
+  <aside class="side">
     <div class="logo"><i>🎙</i> Interview Coach</div>
-    <div class="hdr-r">
-      <nav class="steps" aria-label="Progress">
-        <span id="st1" class="on">① <em>Setup</em></span><span id="st2">② <em>Interview</em></span><span id="st3">③ <em>Debrief</em></span>
-      </nav>
+    <nav class="nav" aria-label="Progress">
+      <div class="ni on" id="st1"><span class="n">1</span>Set up</div>
+      <div class="ni" id="st2"><span class="n">2</span>Interview</div>
+      <div class="ni" id="st3"><span class="n">3</span>Debrief</div>
+    </nav>
+    <div id="outline"></div>
+    <div class="side-foot">
+      <a href="/privacy.html" target="_blank" rel="noopener">Privacy</a>
+      <a href="https://github.com/harishv27/ai-interview-coach" target="_blank" rel="noopener">Source &amp; evaluation</a>
+    </div>
+  </aside>
+
+  <div class="col">
+    <header class="top wrap">
+      <div><h2 id="pageTitle">Set up your interview</h2><p id="pageSub">Add your resume and the job, then pick a focus.</p></div>
       <button id="themeBtn" class="theme" type="button" aria-label="Switch theme" title="Switch theme"></button>
-    </div>
-  </header>
-  <div id="banner" class="notes hidden" role="alert"></div>
+    </header>
 
-  <!-- SETUP -->
-  <section id="setup">
-    <div class="setup-grid">
-    <div class="intro">
-    <h1>Practise the engineering interview<br><b>before it counts.</b></h1>
-    <p class="lead">Upload your resume, paste the job posting, and practise the questions you will actually face — technical depth, system design and behavioural — with scored feedback backed by your own words.</p>
-    <div class="perks"><span>💻 Built for SDE, AI &amp; ML roles</span><span>🏗 System design rounds</span><span>🗣 Voice or text</span><span>🔍 Quotes your exact words</span><span>🛡 Flags uncertain feedback</span></div>
+    <main class="content wrap">
+      <div id="banner" class="notes hidden" role="alert"></div>
 
-    <div id="history"></div>
-    </div>
-    <div class="card form">
-      <h2>Your interview</h2>
-
-      <div class="field">
-        <div class="lab"><span>Resume</span><small id="resumeCount"></small></div>
-        <label class="drop" id="drop" for="resumeFile"><div>📄 <b>Upload</b> or drop your resume here</div><div class="hint">PDF or .txt · up to 5 MB</div></label>
-        <input id="resumeFile" type="file" accept=".pdf,.txt,.md" class="hidden">
-        <div id="fileChip"></div>
-        <textarea id="resume" placeholder="…or paste your resume text here" style="margin-top:10px;min-height:96px"></textarea>
-      </div>
-
-      <div class="field">
-        <div class="lab"><span>Job description</span><small id="jdCount"></small></div>
-        <textarea id="jd" placeholder="Paste the full job posting — responsibilities, tech stack and requirements drive the questions"></textarea>
-      </div>
-
-      <div class="grid2">
-        <div class="field">
-          <div class="lab"><span>Target role</span></div>
-          <input id="role" type="text" placeholder="e.g. AI Engineer" autocomplete="off">
-          <div class="chips" id="roleChips"></div>
+      <!-- SETUP -->
+      <section id="setup">
+        <div class="card banner-hero">
+          <div>
+            <h1>Practise the engineering interview <b>before it counts.</b></h1>
+            <p class="lead">Upload your resume, paste the job posting, and practise the questions you will actually face — technical depth, system design and behavioural — with scored feedback backed by your own words.</p>
+            <div class="perks"><span>💻 Built for SDE, AI &amp; ML roles</span><span>🏗 System design rounds</span><span>🗣 Voice or text</span><span>🔍 Quotes your exact words</span><span>🛡 Flags uncertain feedback</span></div>
+          </div>
+          <div class="stats" id="stats"></div>
         </div>
-        <div class="field">
-          <div class="lab"><span>Questions</span></div>
-          <div class="seg" id="count" role="group" aria-label="Number of questions"><button type="button" data-n="3">3</button><button type="button" data-n="5" class="on">5</button><button type="button" data-n="7">7</button></div>
-          <div class="hint" id="dur" style="margin-top:6px"></div>
+
+        <div class="setup-layout">
+          <div class="card form">
+            <fieldset class="sec">
+              <div class="sec-h"><span class="sec-n">1</span><div><h2>Your background &amp; the job</h2><p>Questions are built from the gap between the two.</p></div></div>
+              <div class="two">
+                <div class="field">
+                  <div class="lab"><span>Resume</span><small id="resumeCount"></small></div>
+                  <label class="drop" id="drop" for="resumeFile"><div>📄 <b>Upload</b> or drop your resume</div><div class="hint">PDF or .txt · up to 5 MB</div></label>
+                  <input id="resumeFile" type="file" accept=".pdf,.txt,.md" class="hidden">
+                  <div id="fileChip"></div>
+                  <textarea id="resume" placeholder="…or paste your resume text here" style="margin-top:10px"></textarea>
+                </div>
+                <div class="field">
+                  <div class="lab"><span>Job description</span><small id="jdCount"></small></div>
+                  <textarea id="jd" placeholder="Paste the full job posting — responsibilities, tech stack and requirements drive the questions"></textarea>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset class="sec">
+              <div class="sec-h"><span class="sec-n">2</span><div><h2>Role &amp; focus</h2><p>What are you preparing for?</p></div></div>
+              <div class="field" style="margin-top:0">
+                <div class="lab"><span>Target role</span></div>
+                <input id="role" type="text" placeholder="e.g. AI Engineer" autocomplete="off">
+                <div class="chips" id="roleChips"></div>
+              </div>
+              <div class="opts3" style="margin-top:18px">
+                <div class="field" style="margin-top:0"><div class="lab"><span>Focus</span></div><div class="seg wrap" id="mode" role="group" aria-label="Interview focus"><button type="button" data-v="mixed" class="on">Mixed</button><button type="button" data-v="behavioural">Behavioural</button><button type="button" data-v="technical">Technical</button><button type="button" data-v="system_design">System design</button></div></div>
+                <div class="field" style="margin-top:0"><div class="lab"><span>Difficulty</span></div><div class="seg" id="level" role="group" aria-label="Difficulty"><button type="button" data-v="standard" class="on">Standard</button><button type="button" data-v="tough">Tough</button></div></div>
+                <div class="field" style="margin-top:0"><div class="lab"><span>Questions</span></div><div class="seg" id="count" role="group" aria-label="Number of questions"><button type="button" data-n="3">3</button><button type="button" data-n="5" class="on">5</button><button type="button" data-n="7">7</button></div><div class="hint" id="dur" style="margin-top:6px"></div></div>
+              </div>
+            </fieldset>
+
+            <fieldset class="sec" style="margin-bottom:0">
+              <div class="sec-h"><span class="sec-n">3</span><div><h2>Start</h2><p>Choose how you want to answer.</p></div></div>
+              <label class="switch" style="margin-top:0"><input id="voice" type="checkbox"><div><b>🎙 Voice mode</b><span class="hint">The coach speaks each question; you answer out loud. Works best in Chrome, Edge or Safari.</span></div></label>
+              <label class="consent"><input id="consent" type="checkbox"><span>I understand my resume text and answers are sent to an AI service to generate feedback. Emails, phone numbers and links are removed first. <a href="/privacy.html" target="_blank" rel="noopener">Privacy details</a></span></label>
+              <button id="startBtn" class="primary big">Start mock interview →</button>
+              <div id="setupErr" class="err" role="alert"></div>
+            </fieldset>
+          </div>
+
+          <aside class="side-col">
+            <div id="history"></div>
+            <div class="card"><h2>How answers are scored</h2><p class="hint" style="margin:2px 0 0">Five criteria, each 1–5 with written anchors.</p><ul class="rubric" id="rubric"></ul></div>
+            <div class="card"><h2>What to expect</h2><ol class="expect"><li>Questions tailored to your resume and the job</li><li>Answer by typing or speaking</li><li>Scores with quotes from your own words</li><li>A follow-up, a stronger rewrite, and retries</li><li>A debrief and a progress chart</li></ol></div>
+          </aside>
         </div>
-      </div>
+      </section>
 
-      <div class="optrow">
-        <div class="field"><div class="lab"><span>Focus</span></div><div class="seg wrap" id="mode" role="group" aria-label="Interview focus"><button type="button" data-v="mixed" class="on">Mixed</button><button type="button" data-v="behavioural">Behavioural</button><button type="button" data-v="technical">Technical</button><button type="button" data-v="system_design">System design</button></div></div>
-        <div class="field"><div class="lab"><span>Difficulty</span></div><div class="seg" id="level" role="group" aria-label="Difficulty"><button type="button" data-v="standard" class="on">Standard</button><button type="button" data-v="tough">Tough</button></div></div>
-      </div>
+      <!-- INTERVIEW -->
+      <section id="interview" class="hidden">
+        <div id="gaps"></div>
+        <div class="card">
+          <div class="dots" id="dots" aria-hidden="true"></div>
+          <div class="qmeta"><span id="progress"></span><span class="badge" id="qtype"></span><span class="spacer"></span><span id="speaking" class="hidden"><span class="speak"><i></i><i></i><i></i></span>Speaking…</span><button id="replay" class="link hidden">🔊 Replay</button></div>
+          <div class="q" id="question"></div>
+          <div class="why" id="why"></div>
 
-      <label class="switch"><input id="voice" type="checkbox"><div><b>🎙 Voice mode</b><span class="hint">The coach speaks each question; you answer out loud. Works best in Chrome, Edge or Safari.</span></div></label>
+          <div class="answerbox">
+            <textarea id="answer" placeholder="Type your answer — or press the mic and speak. You can edit the transcript before submitting." aria-label="Your answer"></textarea>
+            <div class="counter" id="counter">0 words · 0:00</div>
+          </div>
+          <div class="tip" id="tip">💡 <span id="tipText"></span></div>
+          <div class="row" style="margin-top:14px">
+            <button id="mic" class="rec hidden" type="button"><span class="pulse"></span><span id="micLabel">Speak</span></button>
+            <span class="spacer"></span>
+            <span class="hint hidden" id="kbd"><kbd>⌘</kbd>+<kbd>Enter</kbd> to submit</span>
+            <button id="submit" class="primary">Submit answer</button>
+          </div>
+          <div class="hint" id="micHint" style="margin-top:8px"></div>
+          <div id="ansErr" class="err" role="alert"></div>
+        </div>
+        <div id="feedback" aria-live="polite"></div>
+      </section>
 
-      <label class="consent"><input id="consent" type="checkbox"><span>I understand my resume text and answers are sent to an AI service to generate feedback. Emails, phone numbers and links are removed first. <a href="/privacy.html" target="_blank" rel="noopener">Privacy details</a></span></label>
-      <button id="startBtn" class="primary big">Start mock interview →</button>
-      <div id="setupErr" class="err" role="alert"></div>
-    </div>
-    </div>
-  </section>
-
-  <!-- INTERVIEW -->
-  <section id="interview" class="hidden">
-    <div id="gaps"></div>
-    <div class="card">
-      <div class="dots" id="dots" aria-hidden="true"></div>
-      <div class="qmeta"><span id="progress"></span><span class="badge" id="qtype"></span><span class="spacer"></span><span id="speaking" class="hidden"><span class="speak"><i></i><i></i><i></i></span>Speaking…</span><button id="replay" class="link hidden">🔊 Replay</button></div>
-      <div class="q" id="question"></div>
-      <div class="why" id="why"></div>
-
-      <div class="answerbox">
-        <textarea id="answer" placeholder="Type your answer — or press the mic and speak. You can edit the transcript before submitting." aria-label="Your answer"></textarea>
-        <div class="counter" id="counter">0 words · 0:00</div>
-      </div>
-      <div class="tip" id="tip">💡 <span id="tipText"></span></div>
-      <div class="row" style="margin-top:14px">
-        <button id="mic" class="rec hidden" type="button"><span class="pulse"></span><span id="micLabel">Speak</span></button>
-        <span class="spacer"></span>
-        <span class="hint hidden" id="kbd"><kbd>⌘</kbd>+<kbd>Enter</kbd> to submit</span>
-        <button id="submit" class="primary">Submit answer</button>
-      </div>
-      <div class="hint" id="micHint" style="margin-top:8px"></div>
-      <div id="ansErr" class="err" role="alert"></div>
-    </div>
-    <div id="feedback" aria-live="polite"></div>
-  </section>
-
-  <!-- RESULTS -->
-  <section id="results" class="hidden"></section>
-</main>
+      <!-- RESULTS -->
+      <section id="results" class="hidden"></section>
+    </main>
+  </div>
+</div>
 
 <script>
 const $ = (id) => document.getElementById(id);
@@ -311,7 +376,6 @@ const tone = (n) => (n >= 3.5 ? 'good' : n >= 2.5 ? 'warn' : 'bad');
 const label = (n) => (n >= 4.5 ? 'Excellent' : n >= 3.5 ? 'Strong' : n >= 2.5 ? 'Getting there' : n >= 1.8 ? 'Needs work' : 'Weak');
 const words = (t) => (t.trim().match(/\S+/g) || []).length;
 const toast = (m) => { const e = document.createElement('div'); e.className = 'toast'; e.textContent = m; document.body.appendChild(e); setTimeout(() => e.remove(), 1800); };
-function step(n) { [1, 2, 3].forEach((i) => { const e = $('st' + i); e.className = i === n ? 'on' : i < n ? 'done' : ''; }); window.scrollTo({ top: 0 }); }
 
 async function api(path, body) {
   const r = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -320,7 +384,7 @@ async function api(path, body) {
   return j;
 }
 fetch('/api/config').then((r) => r.json()).then((c) => {
-  S.criteria = c.criteria;
+  S.criteria = c.criteria; renderRubric();
   if (!c.keyConfigured) { $('banner').textContent = 'The server has no API key configured — add one and restart.'; $('banner').classList.remove('hidden'); }
 }).catch(() => {});
 
@@ -350,13 +414,35 @@ for (const id of ['mode', 'level']) $(id).onclick = (e) => { const b = e.target.
 $('consent').checked = store.get('consent') === '1';
 $('consent').onchange = () => store.set('consent', $('consent').checked ? '1' : '0');
 
+/* ---------- App shell: steps, outline, rubric ---------- */
+const MODE_LABEL = { mixed: 'Mixed', behavioural: 'Behavioural', technical: 'Technical', system_design: 'System design' };
+const TITLES = { 1: ['Set up your interview', 'Add your resume and the job, then pick a focus.'], 2: ['Mock interview', ''], 3: ['Debrief', 'How you did and what to practise next.'] };
+function step(n) {
+  [1, 2, 3].forEach((i) => { const e = $('st' + i); e.classList.toggle('on', i === n); e.classList.toggle('done', i < n); });
+  $('pageTitle').textContent = TITLES[n][0];
+  $('pageSub').textContent = n === 2 ? `${S.role} · ${MODE_LABEL[S.mode]} · ${S.level === 'tough' ? 'Tough' : 'Standard'}` : TITLES[n][1];
+  window.scrollTo({ top: 0 });
+}
+function renderRubric() { $('rubric').innerHTML = S.criteria.map((c) => `<li><b>${esc(c.label)}</b><span>${esc(c.question)}</span></li>`).join(''); }
+function renderOutline() {
+  const el = $('outline'); if (!S.questions.length) { el.innerHTML = ''; return; }
+  const best = new Map(bestTurns().map((t) => [t.qkey, t]));
+  el.innerHTML = `<div class="outline-h">Interview outline</div><ol class="outline">${S.questions.map((q, i) => {
+    const b = best.get(String(i)), cls = b ? 'done' : i === S.idx && S.current ? 'cur' : 'todo';
+    return `<li class="${cls}"><span class="dot">${b ? '✓' : i + 1}</span><span class="t">${esc(q.type)}${cls === 'cur' && S.current?.isFollowUp ? ' · follow-up' : ''}</span>${b ? `<b class="pill ${tone(b.evaluation.overall)}">${b.evaluation.overall}</b>` : ''}</li>`;
+  }).join('')}</ol>`;
+}
+
 function renderHistory() {
   let h = []; try { h = JSON.parse(store.get('history') || '[]'); } catch {}
-  const el = $('history'); if (!h.length) { el.innerHTML = ''; return; }
+  const st = h.length ? { n: h.length, avg: (h.reduce((a, x) => a + x.overall, 0) / h.length).toFixed(1), best: Math.max(...h.map((x) => x.overall)).toFixed(1) } : null;
+  $('stats').innerHTML = [['Sessions', st ? st.n : '0'], ['Average score', st ? st.avg : '—'], ['Best score', st ? st.best : '—']].map(([l, v]) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
+  const el = $('history');
+  if (!h.length) { el.innerHTML = '<div class="card hist empty"><h2>Your progress</h2><p class="hint">Finish a session and your scores will chart here. Saved only in this browser.</p></div>'; return; }
   const W = 300, H = 56, pts = h.map((x) => x.overall);
   const xy = pts.map((v, i) => [pts.length === 1 ? W / 2 : (i * (W - 12)) / (pts.length - 1) + 6, H - 8 - ((v - 1) / 4) * (H - 16)]);
   const trend = pts.length > 1 ? pts.at(-1) - pts[0] : 0;
-  el.innerHTML = `<div class="card hist"><div class="row"><h2>Your progress</h2><span class="spacer"></span><span class="hint">${h.length} session${h.length > 1 ? 's' : ''}${pts.length > 1 ? ` · ${trend >= 0 ? '▲ +' : '▼ '}${trend.toFixed(1)} since first` : ''}</span></div>
+  el.innerHTML = `<div class="card hist"><div class="row"><h2>Your progress</h2><span class="spacer"></span><span class="hint">${pts.length > 1 ? `${trend >= 0 ? '▲ +' : '▼ '}${trend.toFixed(1)} since first` : '1 session'}</span></div>
     <svg class="spark" viewBox="0 0 ${W} ${H}" aria-label="Score trend"><polyline fill="none" stroke="var(--brand)" stroke-width="2.5" stroke-linejoin="round" points="${xy.map((q) => q.join(',')).join(' ')}"/>${xy.map((q) => `<circle cx="${q[0]}" cy="${q[1]}" r="3.5" fill="var(--brand)"/>`).join('')}</svg>
     ${h.slice(-3).reverse().map((x) => `<div class="hrow"><span>${new Date(x.d).toLocaleDateString()} · ${esc(x.role)}</span><b>${x.overall}</b></div>`).join('')}
     <div class="row" style="margin-top:8px"><span class="hint">Saved only in this browser.</span><span class="spacer"></span><button class="link" id="wipe" type="button">🗑 Delete my data</button></div></div>`;
@@ -449,7 +535,7 @@ function ask(question, type, isFollowUp, why, attempt = 1) {
   Object.assign($('answer'), { value: '', disabled: false }); $('submit').disabled = false; $('feedback').innerHTML = '';
   $('ansErr').textContent = ''; $('micHint').textContent = '';
   S.t0 = Date.now(); clearInterval(S.timer); S.timer = setInterval(tick, 1000); tick();
-  speak(question); $('answer').focus({ preventScroll: true }); $('interview').scrollIntoView({ behavior: 'smooth' });
+  speak(question); $('answer').focus({ preventScroll: true }); $('interview').scrollIntoView({ behavior: 'smooth' }); renderOutline();
 }
 const askMain = () => ask(S.questions[S.idx].question, S.questions[S.idx].type, false, S.questions[S.idx].why_asked);
 
@@ -503,7 +589,7 @@ function renderFeedback(t) {
     <input id="rateNote" type="text" class="hidden" placeholder="What was wrong or missing? (optional)" style="margin-top:10px">
     <div class="sticky"><button id="retry" title="Answer this question again and see if your score improves">↻ Try again</button>${hasFollow ? '<button id="doFollow" class="primary">Answer follow-up →</button>' : ''}<button id="next" class="${hasFollow ? '' : 'primary'}">${last ? 'Finish & see debrief' : 'Next question →'}</button></div>
   </div>`;
-  const el = $('feedback'); animate(el); el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const el = $('feedback'); animate(el); el.scrollIntoView({ behavior: 'smooth', block: 'start' }); renderOutline();
   if (S.voice) speak(ev.summary + (hasFollow ? ' Follow-up question: ' + ev.follow_up : ''));
   $('copy').onclick = () => { navigator.clipboard?.writeText(ev.improved_answer).then(() => toast('Copied')); };
   el.querySelectorAll('#rate button').forEach((b) => (b.onclick = () => {
@@ -550,15 +636,16 @@ async function finish() {
   const weakest = S.criteria.map((c) => ({ c, v: avg(c.key) })).sort((a, b) => a.v - b.v)[0];
   const attempts = (t) => S.turns.filter((x) => x.qkey === t.qkey).length;
   const fill = T.reduce((a, t) => a + (t.delivery?.fillers.total || 0), 0), wc = T.reduce((a, t) => a + (t.delivery?.words || 0), 0);
-  r.innerHTML = `<div class="card fb"><div class="hero">${ring(overall, 124)}<div class="verdict"><h2 style="font-size:22px">${esc(d.headline)}</h2><p class="muted">${T.length} answers · ${esc(S.role)} · weakest area: <b>${esc(weakest.c.label)}</b> (${weakest.v.toFixed(1)})</p></div></div>
+  r.innerHTML = `<div class="res-grid"><div class="card fb"><div class="hero">${ring(overall, 124)}<div class="verdict"><h2 style="font-size:22px">${esc(d.headline)}</h2><p class="muted">${T.length} answers · ${esc(S.role)} · weakest area: <b>${esc(weakest.c.label)}</b> (${weakest.v.toFixed(1)})</p></div></div>
     ${bars((k) => avgs[k])}
     <div class="dchips"><span><b>${wc}</b> words spoken/typed</span><span><b>${fill}</b> filler words (${wc ? ((fill / wc) * 100).toFixed(1) : 0}/100 words)</span>${S.turns.length > T.length ? `<span><b>${S.turns.length - T.length}</b> retr${S.turns.length - T.length > 1 ? 'ies' : 'y'} — best attempts counted</span>` : ''}</div>
     ${d.top_strengths.length ? `<h3>Strengths</h3><ul class="clean">${d.top_strengths.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
     ${d.top_priorities.length ? `<h3>Practise next</h3><ol class="clean">${d.top_priorities.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>` : ''}
     <p>${esc(d.practice_plan)}</p>
-    <h3>Answer by answer</h3>${T.map((t, i) => `<div class="qrow"><span>${t.isFollowUp ? '↳ ' : `<b>Q${T.slice(0, i + 1).filter((x) => !x.isFollowUp).length}.</b> `}${esc(t.question)}${attempts(t) > 1 ? ` <span class="hint">(${attempts(t)} attempts)</span>` : ''}</span><span class="pill ${tone(t.evaluation.overall)}">${t.evaluation.overall}</span></div>`).join('')}
     <div class="row" style="margin-top:20px"><button class="primary" onclick="location.reload()">Practise again</button><button id="card">🖼 Score card</button><button id="dl">⬇ Report</button><button id="cp">Copy Markdown</button></div></div>
-    <details class="card t"><summary>Full transcript with rewrites</summary>${T.map((t) => `<h3>${t.isFollowUp ? 'Follow-up' : 'Question'}: ${esc(t.question)}</h3><p>${esc(t.answer)}</p><p class="muted"><b>Stronger version:</b> ${esc(t.evaluation.improved_answer)}</p>`).join('')}</details>`;
+    <div class="res-side"><div class="card"><h2>Answer by answer</h2>${T.map((t, i) => `<div class="qrow"><span>${t.isFollowUp ? '↳ ' : `<b>Q${T.slice(0, i + 1).filter((x) => !x.isFollowUp).length}.</b> `}${esc(t.question)}${attempts(t) > 1 ? ` <span class="hint">(${attempts(t)} attempts)</span>` : ''}</span><span class="pill ${tone(t.evaluation.overall)}">${t.evaluation.overall}</span></div>`).join('')}</div>
+    <details class="card t"><summary>Full transcript with rewrites</summary>${T.map((t) => `<h3>${t.isFollowUp ? 'Follow-up' : 'Question'}: ${esc(t.question)}</h3><p>${esc(t.answer)}</p><p class="muted"><b>Stronger version:</b> ${esc(t.evaluation.improved_answer)}</p>`).join('')}</details></div></div>`;
+  renderOutline();
   animate(r);
   const md = `# Mock interview report — ${S.role}\n\n**Overall: ${overall}/5** — ${d.headline}\n\n## Practise next\n${d.top_priorities.map((x, i) => `${i + 1}. ${x}`).join('\n')}\n\n## Answers\n` + T.map((t) => `### ${t.question}\nScore: ${t.evaluation.overall}/5 — ${t.evaluation.summary}\n\n**Your answer:** ${t.answer}\n\n**Stronger version:** ${t.evaluation.improved_answer}\n`).join('\n');
   $('cp').onclick = () => navigator.clipboard?.writeText(md).then(() => toast('Report copied'));
