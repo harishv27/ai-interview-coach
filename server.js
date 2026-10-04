@@ -1,6 +1,5 @@
 import express from 'express';
 import multer from 'multer';
-import { PDFParse } from 'pdf-parse';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -51,6 +50,7 @@ app.post('/api/resume', upload.single('resume'), async (req, res) => {
     const { originalname, mimetype, buffer } = req.file;
     let text;
     if (mimetype === 'application/pdf' || originalname.toLowerCase().endsWith('.pdf')) {
+      const { PDFParse } = await import('pdf-parse'); // lazy: pdfjs needs canvas polyfills, don't load at cold start
       const parser = new PDFParse({ data: new Uint8Array(buffer) });
       text = (await parser.getText()).text;
       await parser.destroy?.();
