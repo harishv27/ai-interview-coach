@@ -65,3 +65,13 @@ test('resume upload parses text files and rejects empty', async () => {
   assert.equal(r.status, 200); assert.match((await r.json()).text, /Jane Doe/);
   assert.equal((await fetch(base + '/api/resume', { method: 'POST' })).status, 400);
 });
+
+test('resume upload extracts text from a PDF and gives a clear error for a broken one', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const good = new FormData(); good.append('resume', new Blob([await readFile(new URL('./fixtures/resume.pdf', import.meta.url))], { type: 'application/pdf' }), 'resume.pdf');
+  const r = await fetch(base + '/api/resume', { method: 'POST', body: good });
+  assert.equal(r.status, 200); assert.match((await r.json()).text, /Product Manager/);
+  const bad = new FormData(); bad.append('resume', new Blob(['%PDF-1.4 not really a pdf'], { type: 'application/pdf' }), 'bad.pdf');
+  const rb = await fetch(base + '/api/resume', { method: 'POST', body: bad });
+  assert.equal(rb.status, 422); assert.match((await rb.json()).error, /Could not read this PDF/);
+});

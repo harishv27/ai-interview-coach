@@ -65,19 +65,20 @@ app.post('/api/resume', upload.single('resume'), async (req, res) => {
     const { originalname, mimetype, buffer } = req.file;
     let text;
     if (mimetype === 'application/pdf' || originalname.toLowerCase().endsWith('.pdf')) {
-      const { PDFParse } = await import('pdf-parse'); // lazy: pdfjs needs canvas polyfills, don't load at cold start
-      const parser = new PDFParse({ data: new Uint8Array(buffer) });
-      text = (await parser.getText()).text;
-      await parser.destroy?.();
+      // unpdf bundles a canvas-free pdf.js build, so it runs on serverless platforms; lazy-loaded to keep cold starts fast
+      const { extractText, getDocumentProxy } = await import('unpdf');
+      const pdf = await getDocumentProxy(new Uint8Array(buffer));
+      text = (await extractText(pdf, { mergePages: true })).text;
     } else {
       text = buffer.toString('utf8');
     }
     text = text.replace(/^-- \d+ of \d+ --$/gm, '').replace(/\n{3,}/g, '\n\n').trim();
-    if (text.length < 50) return res.status(422).json({ error: 'Could not read text from this file (scanned PDF?). Paste your resume text instead.' });
+    if (text.length < 50) return res.status(422).json({ error: 'No text found in this file — it may be a scanned image. Paste your resume text instead.' });
     res.json({ text });
   } catch (e) {
-    console.error(e);
-    res.status(422).json({ error: 'Could not parse the file. Try a text-based PDF or .txt.' });
+    console.error('resume parse failed:', e?.name, e?.message || e);
+    const pw = /password/i.test(e?.name + ' ' + e?.message);
+    res.status(422).json({ error: pw ? 'This PDF is password-protected. Remove the password, or paste your resume text instead.' : 'Could not read this PDF. Re-export it from your editor as a text-based PDF, or paste your resume text instead.' });
   }
 });
 
