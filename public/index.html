@@ -52,8 +52,8 @@
   .field { margin-top:18px; }
   .lab { display:flex; justify-content:space-between; align-items:baseline; font-weight:600; font-size:14px; margin-bottom:7px; }
   .lab small { font-weight:400; color:var(--mute); }
-  input[type=text], textarea { width:100%; padding:12px 14px; border:1.5px solid var(--line); border-radius:12px; background:var(--card); color:var(--ink); font:inherit; transition:border-color .15s, box-shadow .15s; }
-  input[type=text]:focus, textarea:focus { outline:none; border-color:var(--brand); box-shadow:0 0 0 4px color-mix(in srgb, var(--brand) 16%, transparent); }
+  input[type=text], select, textarea { width:100%; padding:12px 14px; border:1.5px solid var(--line); border-radius:12px; background:var(--card); color:var(--ink); font:inherit; transition:border-color .15s, box-shadow .15s; }
+  input[type=text]:focus, select:focus, textarea:focus { outline:none; border-color:var(--brand); box-shadow:0 0 0 4px color-mix(in srgb, var(--brand) 16%, transparent); }
   textarea { resize:vertical; min-height:120px; }
   .grid2 { display:grid; grid-template-columns:1fr auto; gap:16px; }
   @media (max-width:560px){ .grid2 { grid-template-columns:1fr; } }
@@ -276,6 +276,28 @@
   .msg.you { background:color-mix(in srgb, var(--brand) 10%, var(--card)); border:1px solid color-mix(in srgb, var(--brand) 25%, var(--line)); }
   .typebox { display:flex; gap:8px; margin-top:12px; } .typebox input { flex:1; }
   @media (min-width:1100px) { .live-grid { grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr); } .live-grid .transcript { position:sticky; top:20px; } }
+  /* ================= simplified, calmer layout ================= */
+  select { appearance:none; -webkit-appearance:none; background-image:linear-gradient(45deg,transparent 50%,var(--mute) 50%),linear-gradient(135deg,var(--mute) 50%,transparent 50%); background-position:calc(100% - 18px) 52%, calc(100% - 13px) 52%; background-size:5px 5px; background-repeat:no-repeat; padding-right:34px !important; cursor:pointer; }
+  .form-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; } .form-head h2 { margin:0; font-size:18px; }
+  .setup-layout.solo { grid-template-columns:minmax(0,1fr) !important; max-width:900px; margin:0 auto; } .setup-layout.solo .side-col { display:none; }
+  .drop { padding:14px; font-size:14px; } #resume { min-height:150px; } #jd { min-height:214px; }
+  .form .field { margin-top:18px; } .form .two .field { margin-top:0; }
+  .opts4 { display:grid; gap:14px; margin-top:18px; } .opts4 .field { margin-top:0; }
+  @media (min-width:760px) { .opts4 { grid-template-columns:1.5fr 1fr 1fr .75fr; } }
+  .fmt button { text-align:center; padding:12px 14px; font-weight:600; } .fmt { grid-template-columns:1fr 1fr; }
+  .consent { margin-top:18px; }
+  .gapline { font-size:13.5px; color:var(--mute); margin:0 0 12px; padding:0 4px; }
+  .q { margin-top:6px; }
+  .answerbox textarea { min-height:170px; }
+  .acc { border-top:1px solid var(--line); margin-top:16px; }
+  .acc > summary { cursor:pointer; font-weight:600; padding:13px 0; font-size:15px; list-style:none; display:flex; justify-content:space-between; align-items:center; }
+  .acc > summary::-webkit-details-marker { display:none; } .acc > summary::after { content:"＋"; color:var(--mute); font-weight:400; } .acc[open] > summary::after { content:"－"; }
+  .acc h3 { margin-top:6px; }
+  .rate { margin-top:18px; gap:6px; } .rate .hint { margin-right:4px; } .rate button { padding:6px 12px; font-size:16px; }
+  .side-foot .link { text-align:left; padding:0; font-size:13px; color:var(--mute); } .side-foot .link:hover { color:var(--brand); }
+  dialog { border:1px solid var(--line); border-radius:var(--r); background:var(--card); color:var(--ink); padding:22px; max-width:460px; width:calc(100% - 32px); box-shadow:var(--shadow); }
+  dialog::backdrop { background:rgba(10,12,20,.5); }
+  .top p:empty { display:none; }
   @media (prefers-reduced-motion:reduce){ *{ animation:none !important; transition:none !important; } }
 </style>
 </head>
@@ -286,18 +308,18 @@
     <nav class="nav" aria-label="Progress">
       <div class="ni on" id="st1"><span class="n">1</span>Set up</div>
       <div class="ni" id="st2"><span class="n">2</span>Interview</div>
-      <div class="ni" id="st3"><span class="n">3</span>Debrief</div>
+      <div class="ni" id="st3"><span class="n">3</span>Results</div>
     </nav>
     <div id="outline"></div>
     <div class="side-foot">
+      <button class="link" id="howBtn" type="button">How scoring works</button>
       <a href="/privacy.html" target="_blank" rel="noopener">Privacy</a>
-      <a href="https://github.com/harishv27/ai-interview-coach" target="_blank" rel="noopener">Source &amp; evaluation</a>
     </div>
   </aside>
 
   <div class="col">
     <header class="top wrap">
-      <div><h2 id="pageTitle">Set up your interview</h2><p id="pageSub">Add your resume and the job, then pick a focus.</p></div>
+      <div><h2 id="pageTitle">New interview</h2><p id="pageSub"></p></div>
       <button id="themeBtn" class="theme" type="button" aria-label="Switch theme" title="Switch theme"></button>
     </header>
 
@@ -306,69 +328,43 @@
 
       <!-- SETUP -->
       <section id="setup">
-        <div class="card banner-hero">
-          <div>
-            <h1>Practise the engineering interview <b>before it counts.</b></h1>
-            <p class="lead">Upload your resume, paste the job posting, and practise the questions you will actually face — technical depth, system design and behavioural — with scored feedback backed by your own words.</p>
-            <div class="perks"><span>💻 Built for SDE, AI &amp; ML roles</span><span>🏗 System design rounds</span><span>🗣 Voice or text</span><span>🔍 Quotes your exact words</span><span>🛡 Flags uncertain feedback</span></div>
-          </div>
-          <div class="stats" id="stats"></div>
-        </div>
-
-        <div class="setup-layout">
+        <div class="setup-layout solo" id="setupLayout">
           <div class="card form">
-            <fieldset class="sec">
-              <div class="sec-h"><span class="sec-n">1</span><div><h2>Your background &amp; the job</h2><p>Questions are built from the gap between the two.</p></div></div>
-              <div class="two">
-                <div class="field">
-                  <div class="lab"><span>Resume</span><small id="resumeCount"></small></div>
-                  <label class="drop" id="drop" for="resumeFile"><div>📄 <b>Upload</b> or drop your resume</div><div class="hint">PDF or .txt · up to 5 MB</div></label>
-                  <input id="resumeFile" type="file" accept=".pdf,.txt,.md" class="hidden">
-                  <div id="fileChip"></div>
-                  <textarea id="resume" placeholder="…or paste your resume text here" style="margin-top:10px"></textarea>
-                </div>
-                <div class="field">
-                  <div class="lab"><span>Job description</span><small id="jdCount"></small></div>
-                  <textarea id="jd" placeholder="Paste the full job posting — responsibilities, tech stack and requirements drive the questions"></textarea>
-                </div>
+            <div class="form-head"><h2>Your details</h2><button class="link hidden" id="clearForm" type="button" title="Remove the saved resume, job description and role from this browser">✕ Clear saved details</button></div>
+            <div class="two">
+              <div class="field">
+                <div class="lab"><span>Resume</span></div>
+                <label class="drop" id="drop" for="resumeFile">📄 Upload a PDF or drop it here</label>
+                <input id="resumeFile" type="file" accept=".pdf,.txt,.md" class="hidden">
+                <div id="fileChip"></div>
+                <textarea id="resume" placeholder="…or paste your resume"></textarea>
               </div>
-            </fieldset>
+              <div class="field">
+                <div class="lab"><span>Job description</span></div>
+                <textarea id="jd" placeholder="Paste the job posting"></textarea>
+              </div>
+            </div>
 
-            <fieldset class="sec">
-              <div class="sec-h"><span class="sec-n">2</span><div><h2>Role &amp; focus</h2><p>What are you preparing for?</p></div></div>
-              <div class="field" style="margin-top:0">
-                <div class="lab"><span>Target role</span></div>
-                <input id="role" type="text" placeholder="e.g. AI Engineer" autocomplete="off">
-                <div class="chips" id="roleChips"></div>
-              </div>
-              <div class="opts3" style="margin-top:18px">
-                <div class="field" style="margin-top:0"><div class="lab"><span>Focus</span></div><div class="seg wrap" id="mode" role="group" aria-label="Interview focus"><button type="button" data-v="mixed" class="on">Mixed</button><button type="button" data-v="behavioural">Behavioural</button><button type="button" data-v="technical">Technical</button><button type="button" data-v="system_design">System design</button></div></div>
-                <div class="field" style="margin-top:0"><div class="lab"><span>Difficulty</span></div><div class="seg" id="level" role="group" aria-label="Difficulty"><button type="button" data-v="standard" class="on">Standard</button><button type="button" data-v="tough">Tough</button></div></div>
-                <div class="field" style="margin-top:0"><div class="lab"><span>Questions</span></div><div class="seg" id="count" role="group" aria-label="Number of questions"><button type="button" data-n="3">3</button><button type="button" data-n="5" class="on">5</button><button type="button" data-n="7">7</button></div><div class="hint" id="dur" style="margin-top:6px"></div></div>
-              </div>
-            </fieldset>
+            <div class="opts4">
+              <div class="field"><div class="lab"><span>Role</span></div><input id="role" type="text" list="rolesList" placeholder="e.g. AI Engineer" autocomplete="off"><datalist id="rolesList"></datalist></div>
+              <div class="field"><div class="lab"><span>Focus</span></div><select id="mode"><option value="mixed">Mixed</option><option value="behavioural">Behavioural</option><option value="technical">Technical</option><option value="system_design">System design</option></select></div>
+              <div class="field"><div class="lab"><span>Difficulty</span></div><select id="level"><option value="standard">Standard</option><option value="tough">Tough</option></select></div>
+              <div class="field"><div class="lab"><span>Questions</span></div><select id="count"><option>3</option><option selected>5</option><option>7</option></select></div>
+            </div>
 
-            <fieldset class="sec" style="margin-bottom:0">
-              <div class="sec-h"><span class="sec-n">3</span><div><h2>Start</h2><p>Choose how you want to answer.</p></div></div>
-                            <div class="field" style="margin-top:0"><div class="lab"><span>Interview format</span></div>
-                <div class="fmt" id="format" role="group" aria-label="Interview format">
-                  <button type="button" data-v="text" class="on"><b>⌨️ Type &amp; get coached</b><span>Answer in text and get scores and a stronger rewrite after every answer.</span></button>
-                  <button type="button" data-v="live"><b>🎙 Live voice interview</b><span>Hands-free, like a real round: the interviewer speaks, listens, asks follow-ups. Full report at the end.</span></button>
-                </div>
-                <div class="hint" id="formatNote" style="margin-top:8px"></div>
+            <div class="field">
+              <div class="fmt" id="format" role="group" aria-label="Interview format">
+                <button type="button" data-v="text" class="on">⌨️ Type answers</button>
+                <button type="button" data-v="live">🎙 Live voice</button>
               </div>
+              <div class="hint" id="formatNote" style="margin-top:8px"></div>
+            </div>
 
-              <label class="consent"><input id="consent" type="checkbox"><span>I understand my resume text and answers are sent to an AI service to generate feedback. Emails, phone numbers and links are removed first. <a href="/privacy.html" target="_blank" rel="noopener">Privacy details</a></span></label>
-              <button id="startBtn" class="primary big">Start mock interview →</button>
-              <div id="setupErr" class="err" role="alert"></div>
-            </fieldset>
+            <label class="consent"><input id="consent" type="checkbox"><span>My text is sent to an AI service to generate feedback (contact details are removed first). <a href="/privacy.html" target="_blank" rel="noopener">Privacy</a></span></label>
+            <button id="startBtn" class="primary big">Start interview →</button>
+            <div id="setupErr" class="err" role="alert"></div>
           </div>
-
-          <aside class="side-col">
-            <div id="history"></div>
-            <div class="card"><h2>How answers are scored</h2><p class="hint" style="margin:2px 0 0">Five criteria, each 1–5 with written anchors.</p><ul class="rubric" id="rubric"></ul></div>
-            <div class="card"><h2>What to expect</h2><ol class="expect"><li>Questions tailored to your resume and the job</li><li>Answer by typing or speaking</li><li>Scores with quotes from your own words</li><li>A follow-up, a stronger rewrite, and retries</li><li>A debrief and a progress chart</li></ol></div>
-          </aside>
+          <aside class="side-col"><div id="history"></div></aside>
         </div>
       </section>
 
@@ -376,21 +372,13 @@
       <section id="interview" class="hidden">
         <div id="gaps"></div>
         <div class="card">
-          <div class="dots" id="dots" aria-hidden="true"></div>
           <div class="qmeta"><span id="progress"></span><span class="badge" id="qtype"></span></div>
           <div class="q" id="question"></div>
-          <div class="why" id="why"></div>
-
           <div class="answerbox">
-            <textarea id="answer" placeholder="Type your answer — or press the mic and speak. You can edit the transcript before submitting." aria-label="Your answer"></textarea>
-            <div class="counter" id="counter">0 words · 0:00</div>
+            <textarea id="answer" placeholder="Answer in your own words — what you did, and the result." aria-label="Your answer"></textarea>
+            <div class="counter" id="counter"></div>
           </div>
-          <div class="tip" id="tip">💡 <span id="tipText"></span></div>
-          <div class="row" style="margin-top:14px">
-            <span class="spacer"></span>
-            <span class="hint hidden" id="kbd"><kbd>⌘</kbd>+<kbd>Enter</kbd> to submit</span>
-            <button id="submit" class="primary">Submit answer</button>
-          </div>
+          <div class="row" style="margin-top:14px"><span class="spacer"></span><button id="submit" class="primary">Submit answer</button></div>
           <div id="ansErr" class="err" role="alert"></div>
         </div>
         <div id="feedback" aria-live="polite"></div>
@@ -400,34 +388,26 @@
       <section id="live" class="hidden">
         <div class="live-grid">
           <div class="card stage">
-            <div class="top-row"><span id="liveProgress">Live interview</span><span id="liveTimer">0:00</span></div>
+            <div class="top-row"><span id="liveProgress"></span><span id="liveTimer">0:00</span></div>
             <div class="orb" id="orb" data-state="idle" aria-hidden="true">🎙</div>
             <div class="live-state" id="liveState" aria-live="polite">Ready when you are</div>
             <div class="caption" id="liveCaption"></div>
-
             <div id="liveIntro" class="intro-live">
-              <h3 style="margin-top:8px">Before you begin</h3>
-              <ul>
-                <li>Allow the microphone when your browser asks.</li>
-                <li>Use headphones if you can — it keeps the interviewer’s voice out of your mic.</li>
-                <li>Answer out loud as you would in a real interview. When you stop talking for a couple of seconds, the interviewer replies on their own.</li>
-                <li>There are no scores during the interview. You get a full report at the end.</li>
-              </ul>
+              <ul><li>Allow the microphone, then answer out loud — the interviewer replies when you pause.</li><li>Headphones help. Your scores come in the report at the end.</li></ul>
               <div class="live-actions"><button id="liveBegin" class="primary big" style="margin:0">🎙 Begin interview</button></div>
             </div>
-
             <div id="liveControls" class="live-actions hidden">
               <button id="liveDone" class="primary">✓ I’m done answering</button>
-              <button id="liveRepeat">↻ Repeat question</button>
-              <button id="liveSkip">Skip question</button>
+              <button id="liveRepeat">↻ Repeat</button>
+              <button id="liveSkip">Skip</button>
               <button id="liveEnd" class="danger">End interview</button>
             </div>
             <div class="hint" id="liveHint" style="margin-top:12px"></div>
           </div>
           <aside class="card transcript">
-            <h2>Conversation</h2><p class="hint" style="margin:2px 0 0">Live transcript. You can also type an answer if you’d rather not speak.</p>
+            <h2>Conversation</h2>
             <div class="log" id="liveLog"></div>
-            <div class="typebox"><input id="liveText" type="text" placeholder="Type an answer instead…" autocomplete="off" aria-label="Type an answer"><button id="liveSend" type="button">Send</button></div>
+            <div class="typebox"><input id="liveText" type="text" placeholder="Or type an answer…" autocomplete="off" aria-label="Type an answer"><button id="liveSend" type="button">Send</button></div>
           </aside>
         </div>
       </section>
@@ -437,6 +417,12 @@
     </main>
   </div>
 </div>
+
+<dialog id="howDlg">
+  <div class="row"><h2>How answers are scored</h2><span class="spacer"></span><button class="link" id="howClose" type="button">Close</button></div>
+  <p class="hint" style="margin:4px 0 0">Each answer gets 1–5 on five criteria, with a quote from your own words as evidence.</p>
+  <ul class="rubric" id="rubric"></ul>
+</dialog>
 
 <script>
 const $ = (id) => document.getElementById(id);
@@ -469,14 +455,10 @@ paintTheme();
 
 /* ---------- Setup ---------- */
 const ROLES = ['AI Engineer', 'ML Engineer', 'Software Engineer (SDE)', 'Backend Developer', 'Frontend Developer', 'Full-Stack Developer', 'Data Engineer', 'DevOps / SRE'];
-$('roleChips').innerHTML = ROLES.map((r) => `<button type="button">${esc(r)}</button>`).join('');
-$('roleChips').onclick = (e) => { if (e.target.tagName === 'BUTTON') { $('role').value = e.target.textContent; saveDraft(); } };
+$('rolesList').innerHTML = ROLES.map((r) => `<option value="${esc(r)}">`).join('');
 
-function counts() {
-  $('resumeCount').textContent = $('resume').value ? words($('resume').value) + ' words' : '';
-  $('jdCount').textContent = $('jd').value ? words($('jd').value) + ' words' : '';
-  $('dur').textContent = `≈ ${S.count * 4}–${S.count * 6} min`;
-}
+// the "clear saved details" button only shows when there is something saved
+function counts() { $('clearForm').classList.toggle('hidden', !($('resume').value || $('jd').value || $('role').value)); }
 function saveDraft() { store.set('draft', JSON.stringify({ resume: $('resume').value, jd: $('jd').value, role: $('role').value })); counts(); }
 try { const d = JSON.parse(store.get('draft') || '{}'); $('resume').value = d.resume || ''; $('jd').value = d.jd || ''; $('role').value = d.role || ''; } catch {}
 ['resume', 'jd', 'role'].forEach((id) => $(id).addEventListener('input', saveDraft)); counts();
@@ -484,27 +466,36 @@ try { const d = JSON.parse(store.get('draft') || '{}'); $('resume').value = d.re
 $('format').onclick = (e) => {
   const b = e.target.closest('button'); if (!b) return;
   S.format = b.dataset.v; [...$('format').children].forEach((x) => x.classList.toggle('on', x === b));
-  $('formatNote').textContent = S.format === 'live' && !LIVE_OK ? 'Your browser can’t record audio here — the live interview needs a modern browser over HTTPS. You can still type answers during it.' : '';
-  $('startBtn').textContent = S.format === 'live' ? 'Start live interview →' : 'Start mock interview →';
+  $('formatNote').textContent = S.format === 'live' && !LIVE_OK ? 'Audio recording isn’t available in this browser, but you can still type your answers.' : '';
+  $('startBtn').textContent = S.format === 'live' ? 'Start live interview →' : 'Start interview →';
 };
-for (const id of ['mode', 'level']) $(id).onclick = (e) => { const b = e.target.closest('button'); if (!b) return; S[id] = b.dataset.v; [...$(id).children].forEach((x) => x.classList.toggle('on', x === b)); };
+$('mode').onchange = () => { S.mode = $('mode').value; };
+$('level').onchange = () => { S.level = $('level').value; };
+$('count').onchange = () => { S.count = +$('count').value; };
+// remove everything saved from a previous visit: resume, job, role (and the uploaded-file chip)
+$('clearForm').onclick = () => {
+  ['resume', 'jd', 'role'].forEach((id) => { $(id).value = ''; });
+  $('fileChip').innerHTML = ''; $('resumeFile').value = ''; $('setupErr').textContent = '';
+  try { localStorage.removeItem('draft'); } catch {}
+  counts(); toast('Cleared'); $('resume').focus();
+};
 $('consent').checked = store.get('consent') === '1';
 $('consent').onchange = () => store.set('consent', $('consent').checked ? '1' : '0');
 
 /* ---------- App shell: steps, outline, rubric ---------- */
 const MODE_LABEL = { mixed: 'Mixed', behavioural: 'Behavioural', technical: 'Technical', system_design: 'System design' };
-const TITLES = { 1: ['Set up your interview', 'Add your resume and the job, then pick a focus.'], 2: ['Mock interview', ''], 3: ['Debrief', 'How you did and what to practise next.'] };
+const TITLES = { 1: 'New interview', 2: 'Interview', 3: 'Results' };
 function step(n) {
   [1, 2, 3].forEach((i) => { const e = $('st' + i); e.classList.toggle('on', i === n); e.classList.toggle('done', i < n); });
-  $('pageTitle').textContent = n === 2 && S.format === 'live' ? 'Live interview' : TITLES[n][0];
-  $('pageSub').textContent = n === 2 ? `${S.format === 'live' ? 'Live voice · ' : ''}${S.role} · ${MODE_LABEL[S.mode]} · ${S.level === 'tough' ? 'Tough' : 'Standard'}` : TITLES[n][1];
+  $('pageTitle').textContent = n === 2 && S.format === 'live' ? 'Live interview' : TITLES[n];
+  $('pageSub').textContent = n === 2 ? `${S.role} · ${MODE_LABEL[S.mode]}${S.level === 'tough' ? ' · Tough' : ''}` : '';
   window.scrollTo({ top: 0 });
 }
 function renderRubric() { $('rubric').innerHTML = S.criteria.map((c) => `<li><b>${esc(c.label)}</b><span>${esc(c.question)}</span></li>`).join(''); }
 function renderOutline() {
   const el = $('outline'); if (!S.questions.length) { el.innerHTML = ''; return; }
   const best = new Map(bestTurns().map((t) => [t.qkey, t]));
-  el.innerHTML = `<div class="outline-h">Interview outline</div><ol class="outline">${S.questions.map((q, i) => {
+  el.innerHTML = `<div class="outline-h">Questions</div><ol class="outline">${S.questions.map((q, i) => {
     const b = best.get(String(i)), cls = b ? 'done' : i === S.idx && S.current ? 'cur' : 'todo';
     return `<li class="${cls}"><span class="dot">${b ? '✓' : i + 1}</span><span class="t">${esc(q.type)}${cls === 'cur' && S.current?.isFollowUp ? ' · follow-up' : ''}</span>${b && S.format !== 'live' ? `<b class="pill ${tone(b.evaluation.overall)}">${b.evaluation.overall}</b>` : ''}</li>`;
   }).join('')}</ol>`;
@@ -512,22 +503,18 @@ function renderOutline() {
 
 function renderHistory() {
   let h = []; try { h = JSON.parse(store.get('history') || '[]'); } catch {}
-  const st = h.length ? { n: h.length, avg: (h.reduce((a, x) => a + x.overall, 0) / h.length).toFixed(1), best: Math.max(...h.map((x) => x.overall)).toFixed(1) } : null;
-  $('stats').innerHTML = [['Sessions', st ? st.n : '0'], ['Average score', st ? st.avg : '—'], ['Best score', st ? st.best : '—']].map(([l, v]) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
-  const el = $('history');
-  if (!h.length) { el.innerHTML = '<div class="card hist empty"><h2>Your progress</h2><p class="hint">Finish a session and your scores will chart here. Saved only in this browser.</p></div>'; return; }
+  $('setupLayout').classList.toggle('solo', !h.length);
+  const el = $('history'); if (!h.length) { el.innerHTML = ''; return; }
   const W = 300, H = 56, pts = h.map((x) => x.overall);
   const xy = pts.map((v, i) => [pts.length === 1 ? W / 2 : (i * (W - 12)) / (pts.length - 1) + 6, H - 8 - ((v - 1) / 4) * (H - 16)]);
   const trend = pts.length > 1 ? pts.at(-1) - pts[0] : 0;
-  el.innerHTML = `<div class="card hist"><div class="row"><h2>Your progress</h2><span class="spacer"></span><span class="hint">${pts.length > 1 ? `${trend >= 0 ? '▲ +' : '▼ '}${trend.toFixed(1)} since first` : '1 session'}</span></div>
+  el.innerHTML = `<div class="card hist"><div class="row"><h2>Progress</h2><span class="spacer"></span><span class="hint">${pts.length > 1 ? `${trend >= 0 ? '▲ +' : '▼ '}${trend.toFixed(1)}` : '1 session'}</span></div>
     <svg class="spark" viewBox="0 0 ${W} ${H}" aria-label="Score trend"><polyline fill="none" stroke="var(--brand)" stroke-width="2.5" stroke-linejoin="round" points="${xy.map((q) => q.join(',')).join(' ')}"/>${xy.map((q) => `<circle cx="${q[0]}" cy="${q[1]}" r="3.5" fill="var(--brand)"/>`).join('')}</svg>
     ${h.slice(-3).reverse().map((x) => `<div class="hrow"><span>${new Date(x.d).toLocaleDateString()} · ${esc(x.role)}</span><b>${x.overall}</b></div>`).join('')}
-    <div class="row" style="margin-top:8px"><span class="hint">Saved only in this browser.</span><span class="spacer"></span><button class="link" id="wipe" type="button">🗑 Delete my data</button></div></div>`;
-  $('wipe').onclick = () => { if (confirm('Delete your saved draft, progress history and consent from this browser?')) { ['draft', 'history', 'consent'].forEach((k) => { try { localStorage.removeItem(k); } catch {} }); location.reload(); } };
+    <div class="row" style="margin-top:8px"><span class="spacer"></span><button class="link" id="wipe" type="button">✕ Clear history</button></div></div>`;
+  $('wipe').onclick = () => { if (confirm('Remove your saved score history from this browser?')) { try { localStorage.removeItem('history'); } catch {} renderHistory(); toast('History cleared'); } };
 }
 renderHistory();
-
-$('count').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; S.count = +b.dataset.n; [...$('count').children].forEach((x) => x.classList.toggle('on', x === b)); counts(); };
 
 async function uploadResume(f) {
   if (!f) return; $('setupErr').textContent = '';
@@ -550,18 +537,18 @@ $('startBtn').onclick = async () => {
   const resume = $('resume').value.trim(), jd = $('jd').value.trim(), role = $('role').value.trim();
   const missing = [!resume && 'resume', !jd && 'job description', !role && 'target role'].filter(Boolean);
   if (missing.length) { $('setupErr').textContent = 'Still needed: ' + missing.join(', ') + '.'; return; }
-  if (!$('consent').checked) { $('setupErr').textContent = 'Please tick the consent box so we can send your text to the AI service.'; return; }
+  if (!$('consent').checked) { $('setupErr').textContent = 'Please tick the consent box to continue.'; return; }
   Object.assign(S, { role, resume, jd });
   const b = $('startBtn'); b.disabled = true; b.innerHTML = '<span class="spinner" style="display:inline-block;vertical-align:-4px;margin-right:10px;border-top-color:#fff"></span>Designing your interview…'; $('setupErr').textContent = '';
   try {
     const { questions, gaps } = await api('/api/start', { resume, jd, role, count: S.count, mode: S.mode, difficulty: S.level });
     Object.assign(S, { questions, gaps: gaps || [], idx: 0, turns: [] });
-    $('gaps').innerHTML = S.gaps.length ? `<div class="card gapcard"><b>Heads-up — likely tough spots</b><div class="hint">The job asks for things your resume doesn’t clearly show. Expect probing on:</div><ul class="clean">${S.gaps.map((g) => `<li>${esc(g)}</li>`).join('')}</ul></div>` : '';
+    $('gaps').innerHTML = S.gaps.length ? `<p class="gapline">🎯 Likely to be probed: ${S.gaps.map(esc).join(' · ')}</p>` : '';
     $('setup').classList.add('hidden');
     if (S.format === 'live') await startLive();
-    else { $('interview').classList.remove('hidden'); step(2); $('kbd').classList.remove('hidden'); askMain(); }
+    else { $('interview').classList.remove('hidden'); step(2); askMain(); }
   } catch (e) { $('setupErr').textContent = e.message; }
-  b.disabled = false; b.textContent = S.format === 'live' ? 'Start live interview →' : 'Start mock interview →';
+  b.disabled = false; b.textContent = S.format === 'live' ? 'Start live interview →' : 'Start interview →';
 };
 
 
@@ -574,14 +561,9 @@ function ask(question, type, isFollowUp, why, attempt = 1) {
   S.current = { question, type, why, isFollowUp, attempt, qkey: `${S.idx}${isFollowUp ? 'f' : ''}` }; S.inputMode = 'text';
   $('gaps').classList.toggle('hidden', S.idx > 0 || isFollowUp || attempt > 1);
   const n = S.questions.length;
-  $('dots').innerHTML = S.questions.map((_, i) => `<i class="${i < S.idx ? 'done' : i === S.idx ? 'cur' : ''}"></i>`).join('');
   $('progress').textContent = `Question ${S.idx + 1} of ${n}${attempt > 1 ? ` · attempt ${attempt}` : ''}`;
   $('qtype').textContent = isFollowUp ? 'Follow-up' : type; $('qtype').classList.toggle('fu', isFollowUp);
-  $('question').textContent = question; $('why').textContent = why ? `Why this question: ${why}` : '';
-  $('tip').classList.toggle('hidden', isFollowUp);
-  $('tipText').innerHTML = type === 'technical' || type === 'situational'
-    ? 'Think aloud: state your assumptions, walk through your approach, name the <b>trade-offs</b>, and mention edge cases and how you would test or monitor it.'
-    : 'Aim for 60–120 seconds. Set the scene briefly, say what <b>you</b> built or decided, and finish with a result — ideally with a number (latency, cost, users, accuracy).';
+  $('question').textContent = question;
   Object.assign($('answer'), { value: '', disabled: false }); $('submit').disabled = false; $('feedback').innerHTML = '';
   $('ansErr').textContent = '';
   S.t0 = Date.now(); clearInterval(S.timer); S.timer = setInterval(tick, 1000); tick();
@@ -625,18 +607,16 @@ function renderFeedback(t) {
   const d = t.delivery, dchips = d ? `<div class="dchips" title="${esc(d.paceNote || '')}"><span><b>${d.words}</b> words</span>${d.wpm ? `<span><b>${d.wpm}</b> wpm · ${d.pace} pace</span>` : ''}<span><b>${d.fillers.total}</b> filler word${d.fillers.total === 1 ? '' : 's'}${d.fillers.top.length ? ' (' + d.fillers.top.map((x) => esc(x.label) + ' ×' + x.n).join(', ') + ')' : ''}</span>${d.longestSentence > 40 ? `<span>Longest sentence <b>${d.longestSentence}</b> words — try shorter ones</span>` : ''}</div>` : '';
   const confTxt = { high: 'High confidence', medium: 'Medium confidence', low: 'Low confidence — treat with caution' }[ev.confidence];
   $('feedback').innerHTML = `<div class="card fb">
-    <div class="hero">${ring(ev.overall)}<div class="verdict"><span class="pill ${tone(ev.overall)}">${label(ev.overall)}</span> <span class="pill ${ev.confidence === 'high' ? 'good' : ev.confidence === 'medium' ? 'warn' : 'bad'}" title="How sure the coach is about these scores">${confTxt}</span> ${delta}<p>${esc(ev.summary)}</p></div></div>
-    ${bars((k) => ev.scores[k])}${dchips}
-    ${notes.length ? `<details class="notes" ${ev.confidence !== 'high' ? 'open' : ''}><summary>⚠️ ${notes.length} reliability note${notes.length > 1 ? 's' : ''} — read before trusting this</summary><ul>${notes.map((n) => `<li>${esc(n)}</li>`).join('')}</ul></details>` : ''}
-    ${evs(ev.strengths, '', 'What worked')}${evs(ev.gaps, 'gap', 'What to improve')}
-    <h3>A stronger version</h3>
-    <div class="rewrite" id="rw">${highlightPlaceholders(ev.improved_answer)}</div>
-    <div class="row" style="margin-top:8px"><span class="hint">Built only from your answer and resume. <mark style="background:color-mix(in srgb,var(--warn) 28%,transparent);border-radius:4px;padding:0 3px">[Highlighted]</mark> parts are for you to fill in with real facts.</span><span class="spacer"></span><button class="link" id="copy">Copy</button></div>
-    ${hasFollow ? `<div class="follow"><b>Interviewer follow-up</b><div style="margin-top:4px;font-size:17px">${esc(ev.follow_up)}</div></div>` : ''}
-    <h3>Was this feedback accurate?</h3>
-    <div class="rate row" id="rate"><button data-r="accurate">👍 Accurate</button><button data-r="partly">🤔 Partly</button><button data-r="wrong">👎 Misleading</button></div>
+    <div class="hero">${ring(ev.overall)}<div class="verdict"><span class="pill ${tone(ev.overall)}">${label(ev.overall)}</span> ${ev.confidence !== 'high' ? `<span class="pill ${ev.confidence === 'medium' ? 'warn' : 'bad'}" title="How sure the coach is about these scores">${confTxt}</span>` : ''} ${delta}<p>${esc(ev.summary)}</p></div></div>
+    ${bars((k) => ev.scores[k])}
+    ${notes.length ? `<details class="notes" ${ev.confidence !== 'high' ? 'open' : ''}><summary>⚠️ ${notes.length} reliability note${notes.length > 1 ? 's' : ''}</summary><ul>${notes.map((n) => `<li>${esc(n)}</li>`).join('')}</ul></details>` : ''}
+    <details class="acc" open><summary>Feedback</summary>${evs(ev.strengths, '', 'What worked')}${evs(ev.gaps, 'gap', 'What to improve')}</details>
+    <details class="acc"><summary>Stronger version</summary><div class="rewrite" id="rw">${highlightPlaceholders(ev.improved_answer)}</div><div class="row" style="margin-top:8px"><span class="hint">Fill the highlighted [brackets] with real facts.</span><span class="spacer"></span><button class="link" id="copy">Copy</button></div></details>
+    ${dchips ? `<details class="acc"><summary>Delivery</summary>${dchips}</details>` : ''}
+    ${hasFollow ? `<div class="follow"><b>Follow-up</b><div style="margin-top:4px;font-size:17px">${esc(ev.follow_up)}</div></div>` : ''}
+    <div class="rate row" id="rate"><span class="hint">Accurate?</span><button data-r="accurate" title="Accurate">👍</button><button data-r="partly" title="Partly">🤔</button><button data-r="wrong" title="Misleading">👎</button></div>
     <input id="rateNote" type="text" class="hidden" placeholder="What was wrong or missing? (optional)" style="margin-top:10px">
-    <div class="sticky"><button id="retry" title="Answer this question again and see if your score improves">↻ Try again</button>${hasFollow ? '<button id="doFollow" class="primary">Answer follow-up →</button>' : ''}<button id="next" class="${hasFollow ? '' : 'primary'}">${last ? 'Finish & see debrief' : 'Next question →'}</button></div>
+    <div class="sticky"><button id="retry" title="Answer this question again">↻ Try again</button>${hasFollow ? '<button id="doFollow" class="primary">Answer follow-up →</button>' : ''}<button id="next" class="${hasFollow ? '' : 'primary'}">${last ? 'See results' : 'Next question →'}</button></div>
   </div>`;
   const el = $('feedback'); animate(el); el.scrollIntoView({ behavior: 'smooth', block: 'start' }); renderOutline();
   $('copy').onclick = () => { navigator.clipboard?.writeText(ev.improved_answer).then(() => toast('Copied')); };
@@ -907,23 +887,22 @@ async function finish() {
   catch (e) { d = { headline: 'Interview complete', top_strengths: [], top_priorities: [], practice_plan: 'The written debrief is unavailable right now — your scores are below.' }; }
   const weakest = S.criteria.map((c) => ({ c, v: avg(c.key) })).sort((a, b) => a.v - b.v)[0];
   const attempts = (t) => S.turns.filter((x) => x.qkey === t.qkey).length;
-  const fill = T.reduce((a, t) => a + (t.delivery?.fillers.total || 0), 0), wc = T.reduce((a, t) => a + (t.delivery?.words || 0), 0);
-  r.innerHTML = `<div class="res-grid"><div class="card fb"><div class="hero">${ring(overall, 124)}<div class="verdict"><h2 style="font-size:22px">${esc(d.headline)}</h2><p class="muted">${T.length} answers · ${esc(S.role)} · weakest area: <b>${esc(weakest.c.label)}</b> (${weakest.v.toFixed(1)})</p></div></div>
+  r.innerHTML = `<div class="res-grid"><div class="card fb"><div class="hero">${ring(overall, 124)}<div class="verdict"><h2 style="font-size:22px;margin:0">${esc(d.headline)}</h2><p class="muted" style="margin:4px 0 0">${T.length} answers · weakest: <b>${esc(weakest.c.label)}</b></p></div></div>
     ${bars((k) => avgs[k])}
-    <div class="dchips"><span><b>${wc}</b> words spoken/typed</span><span><b>${fill}</b> filler words (${wc ? ((fill / wc) * 100).toFixed(1) : 0}/100 words)</span>${S.turns.length > T.length ? `<span><b>${S.turns.length - T.length}</b> retr${S.turns.length - T.length > 1 ? 'ies' : 'y'} — best attempts counted</span>` : ''}</div>
-    ${d.top_strengths.length ? `<h3>Strengths</h3><ul class="clean">${d.top_strengths.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
-    ${d.top_priorities.length ? `<h3>Practise next</h3><ol class="clean">${d.top_priorities.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>` : ''}
-    <p>${esc(d.practice_plan)}</p>
-    <div class="row" style="margin-top:20px"><button class="primary" onclick="location.reload()">Practise again</button><button id="card">🖼 Score card</button><button id="dl">⬇ Report</button><button id="cp">Copy Markdown</button></div></div>
-    <div class="res-side"><div class="card"><h2>Answer by answer</h2>${T.map((t, i) => `<div class="qrow"><span>${t.isFollowUp ? '↳ ' : `<b>Q${T.slice(0, i + 1).filter((x) => !x.isFollowUp).length}.</b> `}${esc(t.question)}${attempts(t) > 1 ? ` <span class="hint">(${attempts(t)} attempts)</span>` : ''}</span><span class="pill ${tone(t.evaluation.overall)}">${t.evaluation.overall}</span></div>`).join('')}</div>
-    <details class="card t"><summary>Full transcript with rewrites</summary>${T.map((t) => `<h3>${t.isFollowUp ? 'Follow-up' : 'Question'}: ${esc(t.question)}</h3><p>${esc(t.answer)}</p><p class="muted"><b>Stronger version:</b> ${esc(t.evaluation.improved_answer)}</p>`).join('')}</details></div></div>`;
+    ${d.top_strengths.length ? `<h3>Strengths</h3><ul class="clean">${d.top_strengths.slice(0, 3).map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+    ${d.top_priorities.length ? `<h3>Practise next</h3><ol class="clean">${d.top_priorities.slice(0, 3).map((x) => `<li>${esc(x)}</li>`).join('')}</ol>` : ''}
+    <div class="row" style="margin-top:20px"><button class="primary" onclick="location.reload()">Practise again</button><button id="card">Score card</button><button id="dl">Download report</button></div></div>
+    <div class="res-side"><div class="card"><h2>Questions</h2>${T.map((t, i) => `<div class="qrow"><span>${t.isFollowUp ? '↳ ' : `<b>Q${T.slice(0, i + 1).filter((x) => !x.isFollowUp).length}.</b> `}${esc(t.question)}${attempts(t) > 1 ? ` <span class="hint">(${attempts(t)} attempts)</span>` : ''}</span><span class="pill ${tone(t.evaluation.overall)}">${t.evaluation.overall}</span></div>`).join('')}</div>
+    <details class="card t"><summary>Transcript &amp; rewrites</summary>${T.map((t) => `<h3>${t.isFollowUp ? 'Follow-up' : 'Question'}: ${esc(t.question)}</h3><p>${esc(t.answer)}</p><p class="muted"><b>Stronger version:</b> ${esc(t.evaluation.improved_answer)}</p>`).join('')}</details></div></div>`;
   renderOutline();
   animate(r);
   const md = `# Mock interview report — ${S.role}\n\n**Overall: ${overall}/5** — ${d.headline}\n\n## Practise next\n${d.top_priorities.map((x, i) => `${i + 1}. ${x}`).join('\n')}\n\n## Answers\n` + T.map((t) => `### ${t.question}\nScore: ${t.evaluation.overall}/5 — ${t.evaluation.summary}\n\n**Your answer:** ${t.answer}\n\n**Stronger version:** ${t.evaluation.improved_answer}\n`).join('\n');
-  $('cp').onclick = () => navigator.clipboard?.writeText(md).then(() => toast('Report copied'));
   $('dl').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([md], { type: 'text/markdown' })); a.download = 'interview-report.md'; a.click(); };
   $('card').onclick = () => { const a = document.createElement('a'); a.href = scoreCard(overall, avgs).toDataURL('image/png'); a.download = 'interview-score.png'; a.click(); toast('Score card saved'); };
 }
+$('howBtn').onclick = () => $('howDlg').showModal();
+$('howClose').onclick = () => $('howDlg').close();
+$('howDlg').addEventListener('click', (e) => { if (e.target === $('howDlg')) $('howDlg').close(); });
 </script>
 </body>
 </html>
