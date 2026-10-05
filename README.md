@@ -4,6 +4,8 @@
 [![Eval](https://github.com/harishv27/ai-interview-coach/actions/workflows/eval.yml/badge.svg)](https://github.com/harishv27/ai-interview-coach/actions/workflows/eval.yml)
 [**Live demo**](https://ai-interview-coach-nine-plum.vercel.app)
 
+> **Portfolio write-up:** [case study](docs/case-study.md) · [evaluation results](docs/PERFORMANCE.md) · [architecture](docs/architecture.md) · [engineering log](docs/engineering-log.md)
+
 A mock-interview app for software and AI engineers. You upload your resume, paste a job posting and pick a role (AI engineer, SDE, backend, frontend, full-stack, ML, data, DevOps). The coach then asks questions tailored to both, scores each answer, asks a follow-up, and shows you a stronger version of what you said.
 
 Most "AI feedback" tools just sound confident. This project is as much about **checking the feedback** as generating it, so every score is backed by a quote from your own answer, and the app tells you when it isn't sure.
