@@ -75,3 +75,28 @@ test('resume upload extracts text from a PDF and gives a clear error for a broke
   const rb = await fetch(base + '/api/resume', { method: 'POST', body: bad });
   assert.equal(rb.status, 422); assert.match((await rb.json()).error, /Could not read this PDF/);
 });
+
+test('voice: status, transcription, speech and interviewer turn work end to end (mock model)', async () => {
+  const h = { 'x-forwarded-for': '10.0.0.20' };
+  const st = await (await fetch(base + '/api/voice/status')).json();
+  assert.equal(st.stt, true); assert.ok(['orpheus', 'browser'].includes(st.tts));
+
+  // too-short audio is treated as silence, real-sized audio is transcribed
+  const tiny = new FormData(); tiny.append('audio', new Blob([new Uint8Array(100)], { type: 'audio/webm' }), 'a.webm');
+  assert.equal((await (await fetch(base + '/api/voice/transcribe', { method: 'POST', body: tiny, headers: h })).json()).text, '');
+  const real = new FormData(); real.append('audio', new Blob([new Uint8Array(4000)], { type: 'audio/webm;codecs=opus' }), 'a.webm'); real.append('prompt', 'Redis, FastAPI');
+  const tr = await fetch(base + '/api/voice/transcribe', { method: 'POST', body: real, headers: h });
+  assert.equal(tr.status, 200); assert.match((await tr.json()).text, /mock transcript/);
+  assert.equal((await fetch(base + '/api/voice/transcribe', { method: 'POST', headers: h })).status, 400);
+
+  const sp = await post('/api/voice/speak', { text: 'Hello there.' }, h);
+  assert.equal(sp.status, 200); assert.equal(sp.headers.get('content-type'), 'audio/wav');
+  assert.equal((await sp.arrayBuffer()).byteLength > 44, true);
+  assert.equal((await post('/api/voice/speak', { text: 'x'.repeat(401) }, h)).status, 400);
+
+  const t1 = await (await post('/api/voice/turn', { ...ctx, question: 'Q?', answer: 'I cached things.', followUpsUsed: 0 }, h)).json();
+  assert.ok(t1.ack && t1.follow_up && t1.move_on === false);
+  const t2 = await (await post('/api/voice/turn', { ...ctx, question: 'Q?', answer: 'I cached things.', followUpsUsed: 1 }, h)).json();
+  assert.equal(t2.follow_up, ''); assert.equal(t2.move_on, true, 'no follow-ups left -> must move on');
+  assert.equal((await post('/api/voice/turn', { role: 'PM', question: 'Q?' }, h)).status, 400);
+});

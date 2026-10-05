@@ -11,7 +11,7 @@ Most "AI feedback" tools just sound confident. This project is as much about **c
 ## What it does
 
 - **Tailored questions** from your resume and the job posting (your stack, projects and the role's requirements), with a heads-up on the requirements your resume doesn't clearly cover.
-- **Text or voice.** In voice mode the question is read aloud and you answer with your microphone, using your browser's built-in speech tools.
+- **Two ways to practise.** *Type & get coached* gives scores and a rewrite after every answer. *Live voice interview* is a hands-free spoken round: the interviewer talks, listens, reacts and asks follow-ups, and you get the full scored report at the end, like a real interview.
 - **Scores on five criteria:** relevance, structure, specificity, business impact and clarity. Each is a 1–5 score with written definitions, so a "4" means the same thing every time (see `lib/rubric.js`).
 - **Evidence for everything.** Each strength and weakness quotes your exact words. The server checks the quote really is in your answer and drops it if not.
 - **A rewritten answer** built only from facts in your answer and resume. Anything unknown becomes a `[placeholder]` for you to fill in, never an invented number.
@@ -19,6 +19,14 @@ Most "AI feedback" tools just sound confident. This project is as much about **c
 - **Retry any answer** and see whether your score improved. The debrief counts your best attempt.
 - **Progress tracking** stored in your browser only, plus a downloadable report and score card.
 - Focus modes: mixed, behavioural, technical depth and system design (including LLM/RAG design for AI roles), plus a tougher difficulty and a light/dark theme.
+
+## Live voice interview
+
+Choose **Live voice interview** on the setup screen and press *Begin*. The interviewer greets you, asks each question out loud, and listens. When you stop talking for about two seconds it replies on its own with a short reaction and, when it makes sense, one follow-up. You can also repeat or skip a question, end early, or type an answer if you don't want to speak. Nothing is scored on screen until the end; scoring runs in the background while you talk.
+
+- **Listening:** your answers are transcribed with Groq Whisper (`whisper-large-v3-turbo`). Names and jargon from your resume and the job posting are passed as a vocabulary hint, so "Redis" and "FastAPI" come out right.
+- **Speaking:** the interviewer uses Groq's Orpheus voice when it is available, and your browser's built-in voice otherwise. Orpheus must be enabled once by your Groq organisation admin by accepting its terms at [console.groq.com/playground?model=canopylabs%2Forpheus-v1-english](https://console.groq.com/playground?model=canopylabs%2Forpheus-v1-english); the app detects this automatically and switches voices.
+- **Turn-taking** is half-duplex (it never listens while it speaks), so headphones help but aren't required. It needs a browser with microphone recording (any current Chrome, Edge, Firefox or Safari) over HTTPS or localhost.
 
 ## How the feedback is kept honest
 
@@ -60,7 +68,7 @@ cp .env.example .env      # then add your GROQ_API_KEY
 npm start                 # http://localhost:3000
 ```
 
-Voice mode works best in Chrome, Edge or Safari. Typing works everywhere.
+The live voice interview needs a microphone and HTTPS (or localhost). Typing works everywhere.
 
 ### Configuration
 
@@ -69,6 +77,7 @@ Voice mode works best in Chrome, Edge or Safari. Typing works everywhere.
 | `GROQ_API_KEY` | none | Required |
 | `GROQ_MODEL` | `openai/gpt-oss-120b` | Model used for scoring |
 | `GROQ_MODEL_FAST` | `openai/gpt-oss-20b` | Smaller model for the rewrite and fact-check |
+| `GROQ_STT_MODEL`, `GROQ_TTS_MODEL`, `GROQ_TTS_VOICE` | `whisper-large-v3-turbo`, `canopylabs/orpheus-v1-english`, `hannah` | Models and voice for the live interview |
 | `GROQ_TPM` | `7000` | Local tokens-per-minute throttle. Groq's free tier allows 8,000 per minute per model |
 | `RATE_LIMIT_PER_HOUR` | `60` | Per-IP limit on model-backed endpoints |
 | `DAILY_CAP` | `400` | App-wide daily cap on scored answers |
@@ -96,6 +105,7 @@ The evaluation has two parts: labelled answers to measure how closely the scores
 | `lib/coach.js` | Question planning, scoring, rewriting, debrief |
 | `lib/guards.js` | Post-model checks |
 | `lib/llm.js` | Model client with throttling and usage metrics |
+| `lib/voice.js` | Speech-to-text and text-to-speech for the live interview |
 | `lib/privacy.js`, `lib/delivery.js`, `lib/ratelimit.js` | Redaction, speech stats, rate limiting |
 | `eval/` | Labelled cases, adversarial cases, runner, results |
 | `scripts/` | Report generators |
@@ -110,7 +120,7 @@ There are no accounts and no database. Emails, phone numbers and links are strip
 - The evaluation set is still based on product-manager answers; an engineering-specific set is the next thing to build, so the accuracy numbers above don't yet describe engineering answers.
 - Scores are an aid to practice, not a prediction of how a real interviewer will rate you. The model still leans a little generous.
 - The calibration labels come from a single rater so far. More independent raters would make the accuracy numbers more trustworthy.
-- Voice mode relies on the browser's speech recognition, so quality varies, and delivery stats are based on the transcript rather than the audio.
+- Delivery stats come from the transcript, not the audio, so tone, confidence and accent are not assessed. Speech recognition can still mishear unusual terms.
 - On Groq's free tier the main model allows roughly 60 scored answers a day (200,000 tokens) and about two a minute, shared by every user. When that runs out the app automatically falls back to a smaller model (answers are flagged as less reliable) and shows a clear message if both are exhausted. Use a paid key for anything beyond personal use, and give the scheduled evaluation its own key so it doesn't use up the app's daily allowance.
 - The planned real-user testing sessions (see [docs/user-research.md](docs/user-research.md)) haven't happened yet, so there is no user feedback data to report.
 

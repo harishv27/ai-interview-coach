@@ -4,7 +4,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { hasKey, MODEL } from './lib/llm.js';
-import { planQuestions, evaluateAnswer, summarizeSession } from './lib/coach.js';
+import { planQuestions, evaluateAnswer, summarizeSession, interviewerTurn } from './lib/coach.js';
+import { transcribe, synthesize, ttsStatus, TtsUnavailable } from './lib/voice.js';
 import { CRITERIA } from './lib/rubric.js';
 import { redactPII, redactDeep } from './lib/privacy.js';
 import { deliveryMetrics } from './lib/delivery.js';
@@ -19,6 +20,7 @@ const DAILY_CAP = +process.env.DAILY_CAP || 400; // whole-app daily ceiling on e
 export const app = express();
 app.set('trust proxy', true);
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
+const uploadAudio = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024 } }); // stays under Vercel's 4.5 MB body limit
 app.use(express.json({ limit: '1mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -44,21 +46,23 @@ async function guard(req, res, cost = 1) {
   if (!daily.ok) { res.set('Retry-After', '3600'); throw new HttpError(429, 'Today’s free capacity has been used up. Please come back tomorrow.'); }
 }
 
+function fail(res, e) {
+  if (e.code === 'QUOTA') {
+    const mins = Math.max(1, Math.ceil((e.retryAfter || 600) / 60));
+    res.set('Retry-After', String((e.retryAfter || 600) | 0));
+    return res.status(429).json({ error: `The AI service's free daily capacity is used up. Please try again in about ${mins} minute${mins > 1 ? 's' : ''}.` });
+  }
+  const status = e.status || 500;
+  if (status >= 500) console.error(e);
+  res.status(status).json({ error: status >= 500 && !e.status ? 'Something went wrong on our side. Please try again.' : e.message });
+}
+
 const wrap = (fn, { limited = true, cost = 1 } = {}) => async (req, res) => {
   try {
     if (!hasKey()) throw new HttpError(500, 'No API key set. Copy .env.example to .env and add GROQ_API_KEY.');
     if (limited) await guard(req, res, cost);
     res.json(await fn(req));
-  } catch (e) {
-    if (e.code === 'QUOTA') {
-      const mins = Math.max(1, Math.ceil((e.retryAfter || 600) / 60));
-      res.set('Retry-After', String((e.retryAfter || 600) | 0));
-      return res.status(429).json({ error: `The AI service's free daily capacity is used up. Please try again in about ${mins} minute${mins > 1 ? 's' : ''}.` });
-    }
-    const status = e.status || 500;
-    if (status >= 500) console.error(e);
-    res.status(status).json({ error: status >= 500 && !e.status ? 'Something went wrong on our side. Please try again.' : e.message });
-  }
+  } catch (e) { fail(res, e); }
 };
 
 app.get('/api/health', (_req, res) => res.json({ ok: true, model: MODEL(), keyConfigured: hasKey(), persistentRateLimit: persistent }));
@@ -115,6 +119,51 @@ app.post('/api/summary', wrap(async ({ body }) => {
   need(Array.isArray(body.turns) && body.turns.length && body.turns.length <= 30, 'turns required');
   return summarizeSession({ role: String(body.role || '').slice(0, LIMITS.role), turns: body.turns });
 }, { cost: 0 })); // per-IP limit only; doesn't spend the daily answer budget
+
+/* ---------------- live voice interview ---------------- */
+// Separate, more generous counters: a single interview makes many short speech requests.
+async function speechGuard(req, res, kind, limit) {
+  const r = await hit(`${kind}:${clientIp(req)}`, limit, 3600);
+  if (!r.ok) { res.set('Retry-After', '3600'); throw new HttpError(429, 'You’ve reached the hourly limit for voice requests. Please try again later.'); }
+}
+
+app.get('/api/voice/status', async (_req, res) => {
+  try { res.json({ stt: hasKey(), ...(await ttsStatus()) }); } catch (e) { fail(res, e); }
+});
+
+app.post('/api/voice/transcribe', uploadAudio.single('audio'), async (req, res) => {
+  try {
+    if (!hasKey()) throw new HttpError(500, 'No API key set.');
+    await speechGuard(req, res, 'stt', 240);
+    need(req.file, 'No audio received');
+    if (req.file.size < 1500) return res.json({ text: '' }); // too short to contain speech
+    const t0 = Date.now();
+    const { text, duration } = await transcribe(req.file.buffer, req.file.mimetype, String(req.body?.prompt || ''));
+    log('voice.jsonl', { event: 'stt', bytes: req.file.size, seconds: duration, ms: Date.now() - t0, empty: !text });
+    res.json({ text });
+  } catch (e) { fail(res, e); }
+});
+
+app.post('/api/voice/speak', async (req, res) => {
+  try {
+    if (!hasKey()) throw new HttpError(500, 'No API key set.');
+    const text = String(req.body?.text || '').trim();
+    need(text && text.length <= 400, 'text required (max 400 characters)');
+    await speechGuard(req, res, 'tts', 600);
+    const audio = await synthesize(text);
+    res.set({ 'Content-Type': 'audio/wav', 'Cache-Control': 'no-store' }).send(audio);
+  } catch (e) {
+    if (e instanceof TtsUnavailable) return res.status(503).json({ code: 'tts_unavailable', reason: e.reason, error: 'Natural voice unavailable' });
+    fail(res, e);
+  }
+});
+
+app.post('/api/voice/turn', wrap(async ({ body }) => {
+  const { role, question, answer, followUpsUsed, difficulty } = body;
+  need(role && question && answer?.trim(), 'role, question and answer are required');
+  tooLong('Answer', answer, LIMITS.answer); tooLong('Question', question, LIMITS.question);
+  return interviewerTurn({ role: String(role).slice(0, LIMITS.role), question, answer: redactPII(answer), followUpsUsed: Math.max(0, +followUpsUsed || 0), maxFollowUps: difficulty === 'tough' ? 2 : 1, difficulty: difficulty === 'tough' ? 'tough' : 'standard' });
+}, { cost: 0 }));
 
 // Candidate rates whether the feedback was accurate / useful. Fuels the real-user research.
 app.post('/api/feedback', async (req, res) => {

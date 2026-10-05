@@ -9,12 +9,12 @@
 <ul>
 <li>Your <b>resume text, the job description, your answers and the target role</b> are sent to an AI model provider (Groq, running an open-weights model) to generate questions and feedback.</li>
 <li><b>Before sending</b>, the server removes email addresses, phone numbers and profile links (LinkedIn, GitHub, etc.) from your text. Other personal details you type (names, employers, addresses) are <i>not</i> removed — leave out anything you don't want processed.</li>
-<li>Audio is <b>not</b> uploaded by this app. Voice mode uses your browser's built-in speech recognition, which in some browsers (for example Chrome) sends audio to the browser vendor's speech service.</li>
+<li><b>Live voice interview:</b> short recordings of your spoken answers are sent to Groq to be transcribed, and the interviewer's lines are sent to Groq (or spoken by your browser's built-in voice) to be read aloud. The app does not store the audio; it is used only to get the text and then discarded. Your browser will ask for microphone permission, and the microphone is switched off when the interview ends.</li>
 </ul>
 <h2>What is stored</h2>
 <ul>
 <li><b>In your browser only:</b> your draft inputs, progress history (scores, dates, roles) and your consent choice, in <code>localStorage</code>. Use <b>“Delete my data”</b> on the home page to remove them.</li>
-<li><b>On the server:</b> there are no user accounts and no database. The app writes redacted operational log lines (your answers, scores, timings and the accuracy rating you give) to the hosting provider's runtime logs. These are used to measure quality and fix bugs, and are retained for the hosting provider's log retention period. Resumes are not written to logs.</li>
+<li><b>On the server:</b> there are no user accounts and no database. The app writes redacted operational log lines (your answers or transcripts, scores, timings and the accuracy rating you give) to the hosting provider's runtime logs. These are used to measure quality and fix bugs, and are retained for the hosting provider's log retention period. Resumes are not written to logs.</li>
 <li>Aggregate statistics (counts and percentages only) may be published; individual answers are never published.</li>
 </ul>
 <h2>Your choices</h2>
