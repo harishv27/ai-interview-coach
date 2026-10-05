@@ -18,6 +18,17 @@ Real problems found while building and testing this project, with how each was f
 | 12 | Groq sometimes rejects the model's JSON itself (HTTP 400 `json_validate_failed`) | One evaluation case errored | Treated as retryable | Unit test |
 | 13 | Rate-limit waits were longer than necessary (p50 61s in one run) | Latency numbers in the evaluation report | The token estimate assumed 3.2 characters per token (real figure is about 4) and padded the reservation; both corrected. p50 per answer is now 11s during back-to-back evaluation runs | Latency recorded in every evaluation run |
 
+## Candidate change awaiting validation
+| # | Change | Evidence so far | Why it is not shipped |
+|---|---|---|---|
+| 14 | Stricter **structure** rule: a vague result ("it went well", "it worked") counts as no result (max 3), and conceptual or design answers are judged on logical order (clarify → approach → trade-offs → verify) so a well-ordered technical answer can score 4–5 | Structure was the weakest criterion (error 0.79; over-credits vague stories, under-credits ordered technical answers; the same pattern appeared on the held-out set). On the 21 dev cases scored by the main model in both runs, structure error fell from 0.81 to 0.48 and overall error from 0.51 to 0.39 | The rule was tuned on those same dev cases, so that gain is expected; the held-out cases (10, labelled before tuning) could not be scored properly because the main model's daily free quota ran out partway through the run (39% of answers fell back to the smaller model). Re-run on a day with quota, check the held-out error, and only then ship |
+
+**Baseline for that check** (current rules, held-out set, main model for every answer): error 0.52, bias 0.00, 98% of scores within ±1.
+
+## Lessons about evaluating on a free tier
+- A 44-case run uses roughly 130,000 tokens of the main model's 200,000-token daily allowance; four large runs in one day exhausted it. The runner now reports the share of answers scored by the backup model and refuses to treat such a run as valid evidence.
+- Partial runs (`--only`, `--ids`) are no longer written to the history, and held-out results are reported separately so tuning on the dev set cannot flatter the headline number.
+
 ## Things that were tried and not kept
 - Padding `max_tokens` "to be safe": made the rate limit worse (#4).
 - Waiting out rate limits: made requests look frozen; failing fast with a clear message is better.

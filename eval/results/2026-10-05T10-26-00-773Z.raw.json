@@ -1,0 +1,1134 @@
+[
+  {
+    "c": {
+      "id": "hold-01-debug-strong",
+      "group": "calibration",
+      "held_out": true,
+      "question": "Tell me about a hard bug you tracked down.",
+      "answer": "Our Python worker's memory kept growing until it was killed every few hours. I used tracemalloc in staging and found we were caching full LLM responses in an unbounded dict. I replaced it with an LRU cache capped at 5,000 entries and added a memory alert. Restarts went from about six a day to zero, and the on-call noise stopped.",
+      "human": {
+        "relevance": 5,
+        "structure": 5,
+        "specificity": 5,
+        "impact": 5,
+        "clarity": 4
+      }
+    },
+    "runs": [
+      {
+        "evaluation": {
+          "scores": {
+            "relevance": 5,
+            "structure": 5,
+            "specificity": 5,
+            "impact": 5,
+            "clarity": 5
+          },
+          "strengths": [
+            {
+              "criterion": "relevance",
+              "quote": "Our Python worker's memory kept growing until it was killed every few hours.",
+              "comment": "Directly answers the prompt about a hard bug."
+            },
+            {
+              "criterion": "structure",
+              "quote": "I used tracemalloc in staging and found we were caching full LLM responses in an unbounded dict. I replaced it with an LRU cache capped at 5,000 entries and added a memory alert. Restarts went from about six a day to zero, and the on-call noise stopped.",
+              "comment": "Clearly outlines situation, personal actions, and result."
+            },
+            {
+              "criterion": "impact",
+              "quote": "Restarts went from about six a day to zero, and the on-call noise stopped.",
+              "comment": "Quantified improvement that reduces downtime and operational overhead."
+            }
+          ],
+          "gaps": [],
+          "improved_answer": "I was dealing with a hard bug where a Python worker’s memory kept ballooning until it was killed every few hours. In staging I ran tracemalloc and discovered we were caching full LLM responses in an unbounded dictionary. I refactored the cache to an LRU implementation capped at 5,000 entries and added a memory‑usage alert. After the change, the worker stopped crashing—restarts dropped from about six a day to zero—and the on‑call noise from the incident queue disappeared. This fix stabilized the service and reduced operational overhead.",
+          "confidence": "high",
+          "technical_claims_to_verify": [],
+          "resume_conflicts": [],
+          "follow_up": "Can you describe how you determined the 5,000‑entry limit for the LRU cache and what trade‑offs you considered?",
+          "non_answer": false,
+          "summary": "The candidate gave a focused, well‑structured story about diagnosing a memory‑leak bug, detailing tools, the fix, and a clear quantitative impact.",
+          "improved_kind": "rewrite",
+          "facts_used": [
+            {
+              "fact": "Our Python worker's memory kept growing until it was killed every few hours.",
+              "source": "answer"
+            },
+            {
+              "fact": "I used tracemalloc in staging and found we were caching full LLM responses in an unbounded dict.",
+              "source": "answer"
+            },
+            {
+              "fact": "I replaced it with an LRU cache capped at 5,000 entries and added a memory alert.",
+              "source": "answer"
+            },
+            {
+              "fact": "Restarts went from about six a day to zero, and the on-call noise stopped.",
+              "source": "answer"
+            }
+          ],
+          "overall": 5
+        },
+        "flags": [
+          {
+            "type": "dropped_unverified_quote",
+            "detail": "Dropped a strength whose quote isn't in the answer."
+          }
+        ],
+        "meta": {
+          "model": "openai/gpt-oss-120b",
+          "calls": 3,
+          "latencyMs": 4305,
+          "promptTokens": 3753,
+          "completionTokens": 1249,
+          "fallback": false,
+          "totalTokens": 5002
+        }
+      }
+    ]
+  },
+  {
+    "c": {
+      "id": "hold-02-prompt-injection-concept",
+      "group": "calibration",
+      "held_out": true,
+      "question": "How would you defend an LLM app against prompt injection?",
+      "answer": "I'd treat all retrieved and user text as untrusted. Keep instructions and data separated in the prompt, never let model output trigger privileged actions without validation, and give tools least privilege. I'd add input and output filters, log suspicious patterns, and keep an adversarial test set in CI so regressions show up before release.",
+      "human": {
+        "relevance": 5,
+        "structure": 4,
+        "specificity": 4,
+        "impact": 3,
+        "clarity": 4
+      }
+    },
+    "runs": [
+      {
+        "evaluation": {
+          "scores": {
+            "relevance": 5,
+            "structure": 3,
+            "specificity": 3,
+            "impact": 2,
+            "clarity": 4
+          },
+          "strengths": [
+            {
+              "criterion": "structure",
+              "quote": "Keep instructions and data separated in the prompt, never let model output trigger privileged actions without validation...",
+              "comment": "Provides a logical sequence of actions, showing a clear approach."
+            },
+            {
+              "criterion": "specificity",
+              "quote": "add input and output filters, log suspicious patterns, and keep an adversarial test set in CI",
+              "comment": "Mentions concrete techniques and tooling (filters, logging, CI test set)."
+            },
+            {
+              "criterion": "clarity",
+              "quote": "I'd treat all retrieved and user text as untrusted. Keep instructions and data separated...",
+              "comment": "Answer is concise and easy to follow."
+            }
+          ],
+          "gaps": [
+            {
+              "criterion": "structure",
+              "quote": "and keep an adversarial test set in CI so regressions show up before release.",
+              "comment": "No explicit result or outcome is described."
+            },
+            {
+              "criterion": "impact",
+              "quote": "log suspicious patterns, and keep an adversarial test set in CI",
+              "comment": "No quantified business or security impact is provided."
+            }
+          ],
+          "improved_answer": "When I built the retrieval‑augmented support assistant that handles roughly 2,000 queries a day, I [X] [X] [X] [X] [X] [X] [X] [X]. This approach helped reduce hallucinations from 18% to 6% and cut p95 latency from 2.8s to 1.1s while keeping the deployment stable on AWS ECS.",
+          "confidence": "medium",
+          "technical_claims_to_verify": [],
+          "resume_conflicts": [],
+          "follow_up": "Can you share a concrete example from your work where you implemented these defenses and measured their effect on security incidents or system reliability?",
+          "non_answer": false,
+          "summary": "The candidate gives a relevant, clear, and reasonably specific defense strategy but lacks concrete outcomes or measured impact. Structure is missing an explicit result.",
+          "improved_kind": "rewrite",
+          "facts_used": [
+            {
+              "fact": "Treat all retrieved and user text as untrusted",
+              "source": "answer"
+            },
+            {
+              "fact": "Keep instructions and data separated in the prompt",
+              "source": "answer"
+            },
+            {
+              "fact": "Never let model output trigger privileged actions without validation",
+              "source": "answer"
+            },
+            {
+              "fact": "Give tools least privilege",
+              "source": "answer"
+            },
+            {
+              "fact": "Add input and output filters",
+              "source": "answer"
+            },
+            {
+              "fact": "Log suspicious patterns",
+              "source": "answer"
+            },
+            {
+              "fact": "Keep an adversarial test set in CI so regressions show up before release",
+              "source": "answer"
+            },
+            {
+              "fact": "Built a retrieval-augmented support assistant",
+              "source": "resume"
+            },
+            {
+              "fact": "The assistant serves about 2,000 queries a day",
+              "source": "resume"
+            },
+            {
+              "fact": "Created a 300-question evaluation set and added reranking",
+              "source": "resume"
+            },
+            {
+              "fact": "Hallucination rate fell from 18% to 6%",
+              "source": "resume"
+            },
+            {
+              "fact": "Cut p95 latency from 2.8s to 1.1s with response caching and streaming",
+              "source": "resume"
+            },
+            {
+              "fact": "Deployed on AWS ECS with GitHub Actions CI/CD",
+              "source": "resume"
+            },
+            {
+              "fact": "Mentored 2 interns",
+              "source": "resume"
+            }
+          ],
+          "overall": 3.4
+        },
+        "flags": [
+          {
+            "type": "dropped_unverified_quote",
+            "detail": "Dropped a strength whose quote isn't in the answer."
+          },
+          {
+            "type": "rewrite_repaired",
+            "detail": "The first rewrite contained claims not in your answer/resume (treated every piece of retrieved or user text as untrusted; kept instructions and data separate in the prompt; never let the model’s output trigger privileged actions without a validation step); they were removed."
+          }
+        ],
+        "meta": {
+          "model": "openai/gpt-oss-120b",
+          "calls": 3,
+          "latencyMs": 4339,
+          "promptTokens": 3766,
+          "completionTokens": 2023,
+          "fallback": false,
+          "totalTokens": 5789
+        }
+      }
+    ]
+  },
+  {
+    "c": {
+      "id": "hold-03-vague-passion",
+      "group": "calibration",
+      "held_out": true,
+      "question": "Why do you want to be an engineer?",
+      "answer": "I'm passionate about clean code and I love solving problems. I believe in continuous learning and I'm a strong team player who is always eager to take on new challenges and make an impact.",
+      "human": {
+        "relevance": 3,
+        "structure": 1,
+        "specificity": 1,
+        "impact": 1,
+        "clarity": 3
+      }
+    },
+    "runs": [
+      {
+        "evaluation": {
+          "scores": {
+            "relevance": 4,
+            "structure": 2,
+            "specificity": 1,
+            "impact": 1,
+            "clarity": 4
+          },
+          "strengths": [
+            {
+              "criterion": "relevance",
+              "quote": "I'm passionate about clean code and I love solving problems.",
+              "comment": "Directly answers the why‑engineer question."
+            },
+            {
+              "criterion": "clarity",
+              "quote": "I believe in continuous learning and I'm a strong team player who is always eager to take on new challenges and make an impact.",
+              "comment": "Clear, concise language with no filler."
+            }
+          ],
+          "gaps": [
+            {
+              "criterion": "structure",
+              "quote": "I'm passionate about clean code and I love solving problems.",
+              "comment": "No clear situation, personal action, or result is described."
+            },
+            {
+              "criterion": "specificity",
+              "quote": "I love solving problems.",
+              "comment": "Only generic statements; lacks concrete examples, tools, or numbers."
+            },
+            {
+              "criterion": "impact",
+              "quote": "make an impact.",
+              "comment": "No measurable outcome or business impact is provided."
+            }
+          ],
+          "improved_answer": "I’m passionate about clean code and solving problems, which led me to build a retrieval‑augmented support assistant that serves about 2,000 queries a day. I created a 300‑question evaluation set and added reranking, cutting hallucinations from 18% to 6%. I also reduced p95 latency from 2.8s to 1.1s with caching and streaming, and deployed the system on AWS ECS using GitHub Actions CI/CD while mentoring two interns. Earlier, I migrated cron jobs to Celery, dropping failures by 70%, and tuned Postgres queries for our billing API. These experiences show my commitment to continuous learning, teamwork, and making a measurable impact as an AI engineer.",
+          "confidence": "medium",
+          "technical_claims_to_verify": [],
+          "resume_conflicts": [],
+          "follow_up": "Can you share a specific project or situation where your passion for clean code led to a measurable improvement, such as reduced bugs or faster delivery?",
+          "non_answer": false,
+          "summary": "The candidate gives a generic, clear motivation but provides no concrete examples, actions, or measurable impact.",
+          "improved_kind": "rewrite",
+          "facts_used": [
+            {
+              "fact": "Built a retrieval-augmented support assistant serving about 2,000 queries a day",
+              "source": "resume"
+            },
+            {
+              "fact": "Created a 300-question evaluation set and added reranking; hallucination rate fell from 18% to 6%",
+              "source": "resume"
+            },
+            {
+              "fact": "Cut p95 latency from 2.8s to 1.1s with response caching and streaming",
+              "source": "resume"
+            },
+            {
+              "fact": "Deployed on AWS ECS with GitHub Actions CI/CD; mentored 2 interns",
+              "source": "resume"
+            },
+            {
+              "fact": "Migrated cron jobs to Celery with retries and idempotency keys; job failures fell by 70%",
+              "source": "resume"
+            },
+            {
+              "fact": "Tuned Postgres queries and indexes behind the billing API",
+              "source": "resume"
+            },
+            {
+              "fact": "Passionate about clean code and solving problems",
+              "source": "answer"
+            },
+            {
+              "fact": "Believe in continuous learning and strong teamwork",
+              "source": "answer"
+            }
+          ],
+          "overall": 2.4
+        },
+        "flags": [],
+        "meta": {
+          "model": "openai/gpt-oss-120b",
+          "calls": 3,
+          "latencyMs": 58303,
+          "promptTokens": 3664,
+          "completionTokens": 1256,
+          "fallback": false,
+          "totalTokens": 4920
+        }
+      }
+    ]
+  },
+  {
+    "c": {
+      "id": "hold-04-vague-result",
+      "group": "calibration",
+      "held_out": true,
+      "question": "Tell me about a technical migration you led.",
+      "answer": "We moved our API from REST to GraphQL because the front end needed more flexible queries. I wrote the schema, set up the resolvers and migrated the endpoints one at a time while keeping the old ones running. It went well and the front-end team liked it.",
+      "human": {
+        "relevance": 4,
+        "structure": 3,
+        "specificity": 3,
+        "impact": 2,
+        "clarity": 4
+      }
+    },
+    "runs": [
+      {
+        "evaluation": {
+          "scores": {
+            "relevance": 5,
+            "structure": 4,
+            "specificity": 3,
+            "impact": 2,
+            "clarity": 5
+          },
+          "strengths": [
+            {
+              "criterion": "relevance",
+              "quote": "We moved our API from REST to GraphQL because the front end needed more flexible queries.",
+              "comment": "Directly answers the migration question and ties to a concrete technical change."
+            },
+            {
+              "criterion": "structure",
+              "quote": "I wrote the schema, set up the resolvers and migrated the endpoints one at a time while keeping the old ones running.",
+              "comment": "Describes actions taken after setting the situation."
+            },
+            {
+              "criterion": "clarity",
+              "quote": "It went well and the front-end team liked it.",
+              "comment": "Clear, concise language with no filler."
+            }
+          ],
+          "gaps": [
+            {
+              "criterion": "specificity",
+              "quote": "I wrote the schema, set up the resolvers and migrated the endpoints one at a time",
+              "comment": "Lacks details on tools, scale, or any technical challenges beyond generic actions."
+            },
+            {
+              "criterion": "impact",
+              "quote": "It went well and the front-end team liked it.",
+              "comment": "No quantitative business impact (e.g., performance, latency, developer productivity) is provided."
+            }
+          ],
+          "improved_answer": "I led a migration of our API from REST to GraphQL to give the front end more flexible queries. I wrote the GraphQL schema, set up the resolvers, and migrated the endpoints one at a time while keeping the old REST endpoints running. The front‑end team appreciated the change.",
+          "confidence": "high",
+          "technical_claims_to_verify": [],
+          "resume_conflicts": [],
+          "follow_up": "Can you share any measurable outcomes from the migration, such as changes in query latency, error rates, or developer productivity?",
+          "non_answer": false,
+          "summary": "The candidate gave a relevant, well‑structured and clear description of a REST‑to‑GraphQL migration, but omitted concrete technical details and measurable impact.",
+          "improved_kind": "rewrite",
+          "facts_used": [
+            {
+              "fact": "moved API from REST to GraphQL",
+              "source": "answer"
+            },
+            {
+              "fact": "wrote the schema",
+              "source": "answer"
+            },
+            {
+              "fact": "set up the resolvers",
+              "source": "answer"
+            },
+            {
+              "fact": "migrated the endpoints one at a time",
+              "source": "answer"
+            },
+            {
+              "fact": "kept the old endpoints running during migration",
+              "source": "answer"
+            },
+            {
+              "fact": "front-end team liked the result",
+              "source": "answer"
+            }
+          ],
+          "overall": 3.8
+        },
+        "flags": [],
+        "meta": {
+          "model": "openai/gpt-oss-120b",
+          "calls": 3,
+          "latencyMs": 3522,
+          "promptTokens": 3631,
+          "completionTokens": 1138,
+          "fallback": false,
+          "totalTokens": 4769
+        }
+      }
+    ]
+  },
+  {
+    "c": {
+      "id": "hold-05-design-url-shortener",
+      "group": "calibration",
+      "held_out": true,
+      "question": "Design a URL shortener.",
+      "answer": "I'd clarify scale first, say 100 million links and heavy reads. The API has create and redirect. Generate short codes from a counter encoded in base62 to avoid collisions, store code to URL in a key-value store, and put a cache in front since reads dominate. For availability I'd replicate the store and shard by code. Trade-offs: counters need coordination, so I'd allocate ranges per server; I'd track redirect latency and cache hit rate.",
+      "human": {
+        "relevance": 5,
+        "structure": 4,
+        "specificity": 5,
+        "impact": 3,
+        "clarity": 4
+      }
+    },
+    "runs": [
+      {
+        "evaluation": {
+          "scores": {
+            "relevance": 5,
+            "structure": 3,
+            "specificity": 4,
+            "impact": 2,
+            "clarity": 4
+          },
+          "strengths": [],
+          "gaps": [],
+          "improved_answer": "I’d start by clarifying the scale—say [X] links with heavy reads. The API would expose create and redirect endpoints. I’d generate short codes from a counter encoded in base62 to avoid collisions, storing the mapping in a key‑value store. Because reads dominate, I’d front the store with a cache. For high availability, I’d replicate the store and shard by code. Counters require coordination, so I’d allocate ranges per server. Finally, I’d monitor redirect latency and cache hit rate to keep performance in check.",
+          "confidence": "medium",
+          "technical_claims_to_verify": [],
+          "resume_conflicts": [],
+          "non_answer": false,
+          "improved_kind": "rewrite",
+          "facts_used": [
+            {
+              "fact": "Clarify scale first, e.g., 100 million links and heavy reads",
+              "source": "answer"
+            },
+            {
+              "fact": "API has create and redirect endpoints",
+              "source": "answer"
+            },
+            {
+              "fact": "Generate short codes from a counter encoded in base62 to avoid collisions",
+              "source": "answer"
+            },
+            {
+              "fact": "Store code-to-URL mapping in a key-value store",
+              "source": "answer"
+            },
+            {
+              "fact": "Put a cache in front since reads dominate",
+              "source": "answer"
+            },
+            {
+              "fact": "For availability, replicate the store and shard by code",
+              "source": "answer"
+            },
+            {
+              "fact": "Counters need coordination, so allocate ranges per server",
+              "source": "answer"
+            },
+            {
+              "fact": "Track redirect latency and cache hit rate",
+              "source": "answer"
+            }
+          ],
+          "overall": 3.6
+        },
+        "flags": [
+          {
+            "type": "dropped_unverified_quote",
+            "detail": "Dropped a strength whose quote isn't in the answer."
+          },
+          {
+            "type": "dropped_unverified_quote",
+            "detail": "Dropped a strength whose quote isn't in the answer."
+          },
+          {
+            "type": "dropped_unverified_quote",
+            "detail": "Dropped a strength whose quote isn't in the answer."
+          },
+          {
+            "type": "dropped_unverified_quote",
+            "detail": "Dropped a strength whose quote isn't in the answer."
+          },
+          {
+            "type": "dropped_unverified_quote",
+            "detail": "Dropped a strength whose quote isn't in the answer."
+          },
+          {
+            "type": "dropped_unverified_quote",
+            "detail": "Dropped a strength whose quote isn't in the answer."
+          },
+          {
+            "type": "dropped_unverified_quote",
+            "detail": "Dropped a strength whose quote isn't in the answer."
+          },
+          {
+            "type": "dropped_unverified_quote",
+            "detail": "Dropped a strength whose quote isn't in the answer."
+          },
+          {
+            "type": "dropped_unverified_quote",
+            "detail": "Dropped a strength whose quote isn't in the answer."
+          },
+          {
+            "type": "dropped_unverified_quote",
+            "detail": "Dropped a strength whose quote isn't in the answer."
+          },
+          {
+            "type": "dropped_unverified_quote",
+            "detail": "Dropped a strength whose quote isn't in the answer."
+          },
+          {
+            "type": "dropped_unverified_quote",
+            "detail": "Dropped a strength whose quote isn't in the answer."
+          },
+          {
+            "type": "dropped_unverified_quote",
+            "detail": "Dropped a strength whose quote isn't in the answer."
+          },
+          {
+            "type": "dropped_unverified_quote",
+            "detail": "Dropped a strength whose quote isn't in the answer."
+          },
+          {
+            "type": "dropped_unverified_quote",
+            "detail": "Dropped a strength whose quote isn't in the answer."
+          },
+          {
+            "type": "dropped_unverified_quote",
+            "detail": "Dropped a strength whose quote isn't in the answer."
+          },
+          {
+            "type": "dropped_unverified_quote",
+            "detail": "Dropped a strength whose quote isn't in the answer."
+          },
+          {
+            "type": "dropped_unverified_quote",
+            "detail": "Dropped a strength whose quote isn't in the answer."
+          },
+          {
+            "type": "dropped_unverified_quote",
+            "detail": "Dropped a strength whose quote isn't in the answer."
+          },
+          {
+            "type": "dropped_unverified_quote",
+            "detail": "Dropped a strength whose quote isn't in the answer."
+          },
+          {
+            "type": "dropped_unverified_quote",
+            "detail": "Dropped a strength whose quote isn't in the answer."
+          },
+          {
+            "type": "dropped_unverified_quote",
+            "detail": "Dropped a strength whose quote isn't in the answer."
+          },
+          {
+            "type": "rewrite_repaired",
+            "detail": "The first rewrite contained claims not in your answer/resume (100 million links; create and redirect endpoints; counter encoded in base62); they were removed."
+          }
+        ],
+        "meta": {
+          "model": "openai/gpt-oss-120b",
+          "calls": 3,
+          "latencyMs": 58696,
+          "promptTokens": 3782,
+          "completionTokens": 1585,
+          "fallback": false,
+          "totalTokens": 5367
+        }
+      }
+    ]
+  },
+  {
+    "c": {
+      "id": "hold-06-design-weak",
+      "group": "calibration",
+      "held_out": true,
+      "question": "Design a URL shortener.",
+      "answer": "You would need a database and a server. The server takes the URL and saves it and gives back a short one. If there are lots of users you add more servers.",
+      "human": {
+        "relevance": 3,
+        "structure": 2,
+        "specificity": 1,
+        "impact": 1,
+        "clarity": 3
+      }
+    },
+    "runs": [
+      {
+        "evaluation": {
+          "scores": {
+            "relevance": 3,
+            "structure": 2,
+            "specificity": 1,
+            "impact": 1,
+            "clarity": 4
+          },
+          "strengths": [
+            {
+              "criterion": "relevance",
+              "quote": "You would need a database and a server. The server takes the URL and saves it and gives back a short one.",
+              "comment": "Addresses the core request to design a URL shortener."
+            }
+          ],
+          "gaps": [
+            {
+              "criterion": "structure",
+              "quote": "You would need a database and a server. The server takes the URL and saves it and gives back a short one. If there are lots of users you add more servers.",
+              "comment": "No clear situation, personal actions, or result described."
+            },
+            {
+              "criterion": "impact",
+              "quote": "If there are lots of users you add more servers.",
+              "comment": "No measurable outcome or business impact is provided."
+            }
+          ],
+          "improved_answer": "I built a retrieval-augmented support assistant using Python, FastAPI, LangChain, and pgvector, serving about 2,000 queries a day. I created a 300-question evaluation set and added reranking, which dropped the hallucination rate from 18% to 6%. I also cut the [detail]th percentile latency from 2.8 seconds to 1.1 second by implementing response caching and streaming. The system was deployed on AWS ECS with GitHub Actions CI/CD, and I mentored two interns during the project.",
+          "confidence": "medium",
+          "technical_claims_to_verify": [],
+          "resume_conflicts": [],
+          "follow_up": "Can you walk me through a specific implementation you would choose for the short URL storage, how you would handle collisions, and what metrics you would use to evaluate its performance and cost at scale?",
+          "non_answer": false,
+          "summary": "The candidate gave a very high‑level, understandable description but omitted concrete design details, personal actions, and measurable impact.",
+          "improved_kind": "rewrite",
+          "facts_used": [
+            {
+              "fact": "Built a retrieval-augmented support assistant (Python, FastAPI, LangChain, pgvector) serving about 2,000 queries a day.",
+              "source": "resume"
+            },
+            {
+              "fact": "Created a 300-question evaluation set and added reranking; hallucination rate fell from 18% to 6%.",
+              "source": "resume"
+            },
+            {
+              "fact": "Cut p95 latency from 2.8s to 1.1s with response caching and streaming.",
+              "source": "resume"
+            },
+            {
+              "fact": "Deployed on AWS ECS with GitHub Actions CI/CD; mentored 2 interns.",
+              "source": "resume"
+            }
+          ],
+          "overall": 2.2
+        },
+        "flags": [
+          {
+            "type": "dropped_unverified_quote",
+            "detail": "Dropped a strength whose quote isn't in the answer."
+          },
+          {
+            "type": "dropped_unverified_quote",
+            "detail": "Dropped a gap whose quote isn't in the answer."
+          },
+          {
+            "type": "invented_numbers",
+            "detail": "Figures not in your answer/resume (95) were replaced with [detail]."
+          }
+        ],
+        "meta": {
+          "model": "openai/gpt-oss-120b",
+          "calls": 3,
+          "latencyMs": 3983,
+          "promptTokens": 3617,
+          "completionTokens": 1198,
+          "fallback": false,
+          "totalTokens": 4815
+        }
+      }
+    ]
+  },
+  {
+    "c": {
+      "id": "hold-07-review-process-concise",
+      "group": "calibration",
+      "held_out": true,
+      "question": "Tell me about improving team process.",
+      "answer": "Code reviews at Beta Labs took about three days to get a first response. I proposed a daily review slot and a size limit on pull requests. First-response time dropped to under one day within a month.",
+      "human": {
+        "relevance": 5,
+        "structure": 4,
+        "specificity": 4,
+        "impact": 4,
+        "clarity": 5
+      }
+    },
+    "runs": [
+      {
+        "evaluation": {
+          "scores": {
+            "relevance": 5,
+            "structure": 5,
+            "specificity": 5,
+            "impact": 3,
+            "clarity": 5
+          },
+          "strengths": [
+            {
+              "criterion": "specificity",
+              "quote": "proposed a daily review slot and a size limit on pull requests... First-response time dropped to under one day within a month.",
+              "comment": "Provides concrete actions, tools (process changes), and measurable metric."
+            },
+            {
+              "criterion": "clarity",
+              "quote": "First-response time dropped to under one day within a month.",
+              "comment": "Answer is concise and easy to follow."
+            }
+          ],
+          "gaps": [
+            {
+              "criterion": "impact",
+              "quote": "First-response time dropped to under one day within a month.",
+              "comment": "Improvement is quantified but not linked to a broader business outcome such as faster releases, higher customer satisfaction, or revenue impact."
+            }
+          ],
+          "improved_answer": "At Beta Labs, I noticed that code reviews were taking about three days for the first response.",
+          "confidence": "high",
+          "technical_claims_to_verify": [],
+          "resume_conflicts": [],
+          "follow_up": "Can you describe how the reduced code‑review turnaround time affected the team’s overall delivery speed or product releases?",
+          "non_answer": false,
+          "summary": "The candidate gave a focused, well‑structured story about speeding up code reviews, with clear actions and measurable results, though the business impact of the faster reviews isn’t articulated.",
+          "improved_kind": "rewrite",
+          "facts_used": [
+            {
+              "fact": "Code reviews at Beta Labs took about three days to get a first response.",
+              "source": "answer"
+            },
+            {
+              "fact": "I proposed a daily review slot and a size limit on pull requests.",
+              "source": "answer"
+            },
+            {
+              "fact": "First-response time dropped to under one day within a month.",
+              "source": "answer"
+            },
+            {
+              "fact": "I worked at Beta Labs as a Backend Engineer from 2021 to 2023.",
+              "source": "resume"
+            }
+          ],
+          "overall": 4.6
+        },
+        "flags": [
+          {
+            "type": "dropped_unverified_quote",
+            "detail": "Dropped a strength whose quote isn't in the answer."
+          },
+          {
+            "type": "dropped_unverified_quote",
+            "detail": "Dropped a strength whose quote isn't in the answer."
+          },
+          {
+            "type": "impact_unsupported",
+            "detail": "Impact needs a measurable result in your answer; capped at 3."
+          },
+          {
+            "type": "rewrite_repaired",
+            "detail": "The first rewrite contained claims not in your answer/resume (I suggested setting a daily review slot and limiting pull request size.; Within a month, the first‑response time fell to under one day.); they were removed."
+          }
+        ],
+        "meta": {
+          "model": "openai/gpt-oss-120b",
+          "calls": 3,
+          "latencyMs": 57285,
+          "promptTokens": 3577,
+          "completionTokens": 943,
+          "fallback": false,
+          "totalTokens": 4520
+        }
+      }
+    ]
+  },
+  {
+    "c": {
+      "id": "hold-08-voice-moderate",
+      "group": "calibration",
+      "held_out": true,
+      "question": "Tell me about a time you worked with another team.",
+      "answer": "um so we had to work with the data team, like, for the evaluation set, and, you know, they gave us the labels but the format was kind of different so I wrote a script to convert them and, um, then we could use them. It was fine.",
+      "human": {
+        "relevance": 4,
+        "structure": 3,
+        "specificity": 3,
+        "impact": 2,
+        "clarity": 3
+      }
+    },
+    "runs": [
+      {
+        "evaluation": {
+          "scores": {
+            "relevance": 3,
+            "structure": 4,
+            "specificity": 3,
+            "impact": 2,
+            "clarity": 3
+          },
+          "strengths": [
+            {
+              "criterion": "clarity",
+              "quote": "I wrote a script to convert them",
+              "comment": "The core idea is easy to follow despite filler words."
+            }
+          ],
+          "gaps": [
+            {
+              "criterion": "specificity",
+              "quote": "I wrote a script to convert them",
+              "comment": "No details about the script (language, libraries, complexity) or scale of the data."
+            },
+            {
+              "criterion": "impact",
+              "quote": "then we could use them. It was fine.",
+              "comment": "No measurable outcome (e.g., speedup, error reduction) is provided."
+            },
+            {
+              "criterion": "clarity",
+              "quote": "um so we had to work with the data team, like, for the evaluation set, and, you know, ...",
+              "comment": "Filler words ('um', 'like', 'you know') make the answer less concise."
+            }
+          ],
+          "improved_answer": "During a project to improve our retrieval‑augmented support assistant, I [converted labels into the required structure], enabling us to run a 300‑question evaluation set. After integrating reranking, we saw the hallucination rate drop from 18% to 6%.",
+          "confidence": "medium",
+          "technical_claims_to_verify": [],
+          "resume_conflicts": [],
+          "follow_up": "Can you quantify how your script affected the evaluation workflow—e.g., how many records you processed, time saved, or error reduction achieved?",
+          "non_answer": false,
+          "summary": "The candidate mentions collaborating with the data team and writing a conversion script, but provides few concrete details or measurable impact.",
+          "improved_kind": "rewrite",
+          "facts_used": [
+            {
+              "fact": "I worked with the data team",
+              "source": "answer"
+            },
+            {
+              "fact": "They provided labels for an evaluation set",
+              "source": "answer"
+            },
+            {
+              "fact": "The label format was different than what we needed",
+              "source": "answer"
+            },
+            {
+              "fact": "I wrote a script to convert the labels into the required format",
+              "source": "answer"
+            },
+            {
+              "fact": "I created a 300-question evaluation set for the retrieval-augmented support assistant",
+              "source": "resume"
+            },
+            {
+              "fact": "Adding reranking reduced hallucination rate from 18% to 6%",
+              "source": "resume"
+            }
+          ],
+          "overall": 3
+        },
+        "flags": [
+          {
+            "type": "dropped_unverified_quote",
+            "detail": "Dropped a strength whose quote isn't in the answer."
+          },
+          {
+            "type": "dropped_unverified_quote",
+            "detail": "Dropped a strength whose quote isn't in the answer."
+          },
+          {
+            "type": "rewrite_repaired",
+            "detail": "The first rewrite contained claims not in your answer/resume (collaborated with the data team; they supplied us with labeled data; the format didn’t match our evaluation pipeline); they were removed."
+          }
+        ],
+        "meta": {
+          "model": "openai/gpt-oss-120b",
+          "calls": 3,
+          "latencyMs": 5088,
+          "promptTokens": 3680,
+          "completionTokens": 1589,
+          "fallback": false,
+          "totalTokens": 5269
+        }
+      }
+    ]
+  },
+  {
+    "c": {
+      "id": "hold-09-overclaim",
+      "group": "calibration",
+      "held_out": true,
+      "question": "What are you most proud of?",
+      "answer": "I basically designed our entire microservices architecture by myself and everything runs perfectly with no problems. Nobody else really contributed anything important and it's the best system in the company.",
+      "human": {
+        "relevance": 3,
+        "structure": 2,
+        "specificity": 1,
+        "impact": 2,
+        "clarity": 3
+      }
+    },
+    "runs": [
+      {
+        "evaluation": {
+          "scores": {
+            "relevance": 5,
+            "structure": 2,
+            "specificity": 1,
+            "impact": 1,
+            "clarity": 3
+          },
+          "strengths": [
+            {
+              "criterion": "relevance",
+              "quote": "I basically designed our entire microservices architecture by myself and everything runs perfectly with no problems.",
+              "comment": "Directly answers the 'what are you most proud of' prompt."
+            }
+          ],
+          "gaps": [
+            {
+              "criterion": "structure",
+              "quote": "I basically designed our entire microservices architecture by myself and everything runs perfectly with no problems.",
+              "comment": "No clear situation, actions, or results are described."
+            },
+            {
+              "criterion": "impact",
+              "quote": "everything runs perfectly with no problems",
+              "comment": "No measurable business outcome or quantified impact is provided."
+            },
+            {
+              "criterion": "clarity",
+              "quote": "Nobody else really contributed anything important and it's the best system in the company.",
+              "comment": "Contains bragging filler and vague language, reducing crispness."
+            }
+          ],
+          "improved_answer": "",
+          "confidence": "medium",
+          "technical_claims_to_verify": [
+            {
+              "quote": "I basically designed our entire microservices architecture by myself",
+              "concern": "Unclear if candidate actually led the architecture; may conflict with resume."
+            },
+            {
+              "quote": "everything runs perfectly with no problems",
+              "concern": "Absolute claim of no problems is unlikely; needs verification."
+            }
+          ],
+          "resume_conflicts": [
+            {
+              "quote": "I basically designed our entire microservices architecture by myself",
+              "issue": "Resume lists work on retrieval‑augmented assistant and evaluation, not full microservices architecture design."
+            }
+          ],
+          "follow_up": "Can you walk me through a specific project where you designed a microservice, describing the technologies you used, the challenges you faced, and any measurable results you achieved?",
+          "non_answer": false,
+          "summary": "The answer is on‑topic but provides no concrete details, measurable impact, or clear story structure, and it conflicts with the resume.",
+          "improved_kind": "rewrite",
+          "facts_used": [],
+          "overall": 2.4
+        },
+        "flags": [
+          {
+            "type": "resume_conflict",
+            "detail": "Your answer doesn't match your resume (\"I basically designed our entire microservices architecture by myself\": Resume lists work on retrieval‑augmented assistant and evaluation, not full microservices architecture design.). An interviewer will notice — scores capped until it's reconciled."
+          },
+          {
+            "type": "technical_claims",
+            "detail": "Some technical statements in your answer could not be verified by the coach — double-check them."
+          }
+        ],
+        "meta": {
+          "model": "openai/gpt-oss-120b",
+          "calls": 2,
+          "latencyMs": 56335,
+          "promptTokens": 2917,
+          "completionTokens": 838,
+          "fallback": false,
+          "totalTokens": 3755
+        }
+      }
+    ]
+  },
+  {
+    "c": {
+      "id": "hold-10-process-vs-thread",
+      "group": "calibration",
+      "held_out": true,
+      "question": "What's the difference between a process and a thread?",
+      "answer": "A process has its own memory space, while threads in the same process share memory. That makes threads cheaper to create and good for sharing data, but you need locks to avoid races. A crash in one process doesn't take down others, whereas a crashing thread can bring down the whole process.",
+      "human": {
+        "relevance": 5,
+        "structure": 3,
+        "specificity": 4,
+        "impact": 3,
+        "clarity": 5
+      }
+    },
+    "runs": [
+      {
+        "evaluation": {
+          "scores": {
+            "relevance": 5,
+            "structure": 2,
+            "specificity": 3,
+            "impact": 2,
+            "clarity": 4
+          },
+          "strengths": [
+            {
+              "criterion": "relevance",
+              "quote": "A process has its own memory space, while threads in the same process share memory.",
+              "comment": "Directly answers the asked difference between process and thread."
+            },
+            {
+              "criterion": "clarity",
+              "quote": "That makes threads cheaper to create and good for sharing data, but you need locks to avoid races.",
+              "comment": "Explanation is concise and easy to follow."
+            }
+          ],
+          "gaps": [
+            {
+              "criterion": "structure",
+              "quote": "A process has its own memory space, while threads in the same process share memory...",
+              "comment": "Provides definition only; lacks a situation, personal action, and result."
+            },
+            {
+              "criterion": "specificity",
+              "quote": "A crash in one process doesn't take down others, whereas a crashing thread can bring down the whole process.",
+              "comment": "Explanation is generic; no personal experience, tools, or numbers."
+            },
+            {
+              "criterion": "impact",
+              "quote": "A crash in one process doesn't take down others...",
+              "comment": "No business or engineering outcome is described; impact is vague."
+            }
+          ],
+          "improved_answer": "When I was asked to explain the difference between a process and a thread, I first set the context by describing how a process owns its own memory space, while threads within that process share memory. I then highlighted the practical implications: threads are cheaper to create and allow efficient data sharing, but they require locks to avoid race conditions. Finally, I pointed out the reliability aspect—if one process crashes, the others remain unaffected, whereas a crashing thread can bring down the entire process.",
+          "confidence": "medium",
+          "technical_claims_to_verify": [],
+          "resume_conflicts": [],
+          "follow_up": "Pick any project from your resume you are proud of: what was the goal, what did you personally build, and what was the result?",
+          "non_answer": false,
+          "summary": "The answer is spot‑on for the conceptual question and clearly articulated, but it lacks a story, personal details, and measurable impact.",
+          "improved_kind": "rewrite",
+          "facts_used": [
+            {
+              "fact": "A process has its own memory space",
+              "source": "answer"
+            },
+            {
+              "fact": "Threads in the same process share memory",
+              "source": "answer"
+            },
+            {
+              "fact": "Threads are cheaper to create and good for sharing data",
+              "source": "answer"
+            },
+            {
+              "fact": "You need locks to avoid races when using threads",
+              "source": "answer"
+            },
+            {
+              "fact": "A crash in one process doesn't take down others",
+              "source": "answer"
+            },
+            {
+              "fact": "A crashing thread can bring down the whole process",
+              "source": "answer"
+            }
+          ],
+          "overall": 3.2
+        },
+        "flags": [],
+        "meta": {
+          "model": "openai/gpt-oss-120b",
+          "calls": 3,
+          "latencyMs": 7676,
+          "promptTokens": 3680,
+          "completionTokens": 1197,
+          "fallback": false,
+          "totalTokens": 4877
+        }
+      }
+    ]
+  }
+]

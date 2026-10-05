@@ -40,7 +40,8 @@ const lines = [`# Eval report`, ``, `- Set: \`${SET}\`  · Model: \`${MODEL()}\`
 
 if (errored.length) lines.push(`## 0. Cases that errored (no usable output)`, ``, ...errored.map((r) => `- ${r.c.id}: ${r.error}`), ``);
 // ---- Calibration vs human labels
-const cal = results.filter((r) => r.c.human);
+const cal = results.filter((r) => r.c.human && !r.c.held_out);
+const held = results.filter((r) => r.c.human && r.c.held_out);
 if (cal.length) {
   const err = Object.fromEntries(CRITERIA_KEYS.map((k) => [k, []]));
   const ov = [];
@@ -61,6 +62,20 @@ if (cal.length) {
   for (let i = 0; i < ov.length; i++) for (let j = i + 1; j < ov.length; j++) if (Math.abs(ov[i].h - ov[j].h) >= 0.6) { tot++; if ((ov[i].a - ov[j].a) * (ov[i].h - ov[j].h) > 0) agree++; }
   summary.rank = [agree, tot];
   lines.push(`**Ranking agreement** (pairs the humans separated by ≥0.6): ${agree}/${tot}`, ``);
+}
+
+// ---- Held-out cases: written and labelled before any rule was tuned on the dev set
+if (held.length) {
+  const err = [];
+  lines.push(`## 1b. Held-out calibration (${held.length} cases, never used for tuning)`, ``, `| Case | Human | AI | Δ | per-criterion Δ |`, `|---|---|---|---|---|`);
+  for (const { c, runs } of held) {
+    const ai = Object.fromEntries(CRITERIA_KEYS.map((k) => [k, mean(runs.map((r) => r.evaluation.scores[k]))]));
+    const per = CRITERIA_KEYS.map((k) => { const d = ai[k] - c.human[k]; err.push(d); return (d >= 0 ? '+' : '') + d.toFixed(1); });
+    const aiO = mean(runs.map((r) => r.evaluation.overall)), hO = humanOverall(c.human);
+    lines.push(`| ${c.id} | ${hO.toFixed(1)} | ${aiO.toFixed(1)} | ${(aiO - hO >= 0 ? '+' : '') + (aiO - hO).toFixed(1)} | ${per.join(' / ')} |`);
+  }
+  summary.held = { n: held.length, mae: mean(err.map(Math.abs)), bias: mean(err), within1: err.filter((d) => Math.abs(d) <= 1).length / err.length };
+  lines.push(``, `**Held-out MAE:** ${summary.held.mae.toFixed(2)} · **Bias:** ${summary.held.bias.toFixed(2)} · **Within ±1:** ${Math.round(summary.held.within1 * 100)}%`, ``);
 }
 
 // ---- Adversarial expectations
@@ -119,6 +134,6 @@ const stamp = new Date().toISOString().replace(/[:.]/g, '-');
 fs.writeFileSync(path.join(dir, 'results', `${stamp}.md`), report);
 fs.writeFileSync(path.join(dir, 'results', `${stamp}.raw.json`), JSON.stringify(results, null, 2));
 // ---- Append to the run history (read by scripts/report.js -> docs/PERFORMANCE.md)
-fs.appendFileSync(path.join(dir, 'results', 'history.jsonl'), JSON.stringify({ date: new Date().toISOString(), set: SET, model: MODEL(), runsPerCase: RUNS, cases: cases.length, source: process.env.GITHUB_ACTIONS ? 'github-actions' : 'local', ...summary }) + '\n');
+if (!ONLY && !IDS.length || process.argv.includes('--record')) fs.appendFileSync(path.join(dir, 'results', 'history.jsonl'), JSON.stringify({ date: new Date().toISOString(), set: SET, model: MODEL(), runsPerCase: RUNS, cases: cases.length, source: process.env.GITHUB_ACTIONS ? 'github-actions' : 'local', ...summary }) + '\n');
 console.log(report);
 if (process.argv.includes('--gate') && gateReasons.length) { console.error('GATE FAILED: ' + gateReasons.join('; ')); process.exit(1); }

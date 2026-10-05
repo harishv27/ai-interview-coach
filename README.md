@@ -48,8 +48,8 @@ When something looks shaky, the app shows a confidence level and a list of relia
 | Scores within ±1 of human | **97%** | ≥ 85% |
 | Ranking agreement | **176/180** | 100% |
 | Failure-mode tests passed | **10/10** | 100% |
-| Latency per answer (p50 / p95) | **11.3s / 70.4s** | < 15s p50 |
-| Tokens per answer | **4896** | — |
+| Latency per answer (p50 / p95) | **7.7s / 58.7s** | < 15s p50 |
+| Tokens per answer | **4908** | — |
 
 <sub>Latest run: 2026-10-05 09:33 UTC · set `eng-v1` · `openai/gpt-oss-120b` · 34 cases × 1 run(s) · local</sub>
 

@@ -12,10 +12,13 @@ const f = (n, d = 2) => (n == null ? '—' : Number(n).toFixed(d));
 const sec = (ms) => (ms == null ? '—' : (ms / 1000).toFixed(1) + 's');
 const pct = (n) => (n == null ? '—' : Math.round(n * 100) + '%');
 const day = (d) => d.slice(0, 16).replace('T', ' ') + ' UTC';
-const last = hist.at(-1);
+// partial rows (e.g. the held-out set on its own) appear in the table but never as the headline result
+const full = hist.filter((h) => !h.partial);
+const last = full.at(-1);
 const withPerf = [...hist].reverse().find((h) => h.latencyP50 != null);
 
 const status = (h) => {
+  if (h.partial) return '—';
   const checks = [h.mae <= 0.8, Math.abs(h.bias) <= 0.3, h.within1 >= 0.85, h.adv && h.adv[0] === h.adv[1]];
   return checks.every(Boolean) ? '✅' : '⚠️';
 };
@@ -35,21 +38,21 @@ const summary = `| Metric | Latest | Target |
 const rows = [...hist].reverse().slice(0, 25).map((h, i) =>
   `| ${day(h.date)} | ${h.set || 'pm-v1'} | \`${h.model}\` | ${h.runsPerCase} | ${f(h.mae)} | ${h.bias >= 0 ? '+' : ''}${f(h.bias)} | ${pct(h.within1)} | ${h.rank ? h.rank.join('/') : '—'} | ${h.adv ? h.adv.join('/') : '—'} | ${sec(h.latencyP50)} | ${sec(h.latencyP95)} | ${h.avgTokens ?? '—'} | ${status(h)} | ${h.note || h.source || ''} |`).join('\n');
 
-const xs = hist.map((_, i) => `"#${i + 1}"`).join(', ');
+const xs = full.map((_, i) => `"#${i + 1}"`).join(', ');
 const charts = `\`\`\`mermaid
 xychart-beta
     title "Calibration error (MAE) per eval run — lower is better"
     x-axis [${xs}]
     y-axis "MAE" 0 --> 1
-    line [${hist.map((h) => f(h.mae)).join(', ')}]
+    line [${full.map((h) => f(h.mae)).join(', ')}]
 \`\`\`
 
 \`\`\`mermaid
 xychart-beta
     title "Failure-mode tests passed per eval run"
     x-axis [${xs}]
-    y-axis "passed" 0 --> ${Math.max(...hist.map((h) => h.adv?.[1] || 0), 1)}
-    bar [${hist.map((h) => h.adv?.[0] ?? 0).join(', ')}]
+    y-axis "passed" 0 --> ${Math.max(...full.map((h) => h.adv?.[1] || 0), 1)}
+    bar [${full.map((h) => h.adv?.[0] ?? 0).join(', ')}]
 \`\`\``;
 
 const flagTotals = {};

@@ -425,5 +425,145 @@
   "expect": {
    "flagType": "resume_conflict"
   }
+ },
+ {
+  "id": "hold-01-debug-strong",
+  "group": "calibration",
+  "held_out": true,
+  "question": "Tell me about a hard bug you tracked down.",
+  "answer": "Our Python worker's memory kept growing until it was killed every few hours. I used tracemalloc in staging and found we were caching full LLM responses in an unbounded dict. I replaced it with an LRU cache capped at 5,000 entries and added a memory alert. Restarts went from about six a day to zero, and the on-call noise stopped.",
+  "human": {
+   "relevance": 5,
+   "structure": 5,
+   "specificity": 5,
+   "impact": 5,
+   "clarity": 4
+  }
+ },
+ {
+  "id": "hold-02-prompt-injection-concept",
+  "group": "calibration",
+  "held_out": true,
+  "question": "How would you defend an LLM app against prompt injection?",
+  "answer": "I'd treat all retrieved and user text as untrusted. Keep instructions and data separated in the prompt, never let model output trigger privileged actions without validation, and give tools least privilege. I'd add input and output filters, log suspicious patterns, and keep an adversarial test set in CI so regressions show up before release.",
+  "human": {
+   "relevance": 5,
+   "structure": 4,
+   "specificity": 4,
+   "impact": 3,
+   "clarity": 4
+  }
+ },
+ {
+  "id": "hold-03-vague-passion",
+  "group": "calibration",
+  "held_out": true,
+  "question": "Why do you want to be an engineer?",
+  "answer": "I'm passionate about clean code and I love solving problems. I believe in continuous learning and I'm a strong team player who is always eager to take on new challenges and make an impact.",
+  "human": {
+   "relevance": 3,
+   "structure": 1,
+   "specificity": 1,
+   "impact": 1,
+   "clarity": 3
+  }
+ },
+ {
+  "id": "hold-04-vague-result",
+  "group": "calibration",
+  "held_out": true,
+  "question": "Tell me about a technical migration you led.",
+  "answer": "We moved our API from REST to GraphQL because the front end needed more flexible queries. I wrote the schema, set up the resolvers and migrated the endpoints one at a time while keeping the old ones running. It went well and the front-end team liked it.",
+  "human": {
+   "relevance": 4,
+   "structure": 3,
+   "specificity": 3,
+   "impact": 2,
+   "clarity": 4
+  }
+ },
+ {
+  "id": "hold-05-design-url-shortener",
+  "group": "calibration",
+  "held_out": true,
+  "question": "Design a URL shortener.",
+  "answer": "I'd clarify scale first, say 100 million links and heavy reads. The API has create and redirect. Generate short codes from a counter encoded in base62 to avoid collisions, store code to URL in a key-value store, and put a cache in front since reads dominate. For availability I'd replicate the store and shard by code. Trade-offs: counters need coordination, so I'd allocate ranges per server; I'd track redirect latency and cache hit rate.",
+  "human": {
+   "relevance": 5,
+   "structure": 4,
+   "specificity": 5,
+   "impact": 3,
+   "clarity": 4
+  }
+ },
+ {
+  "id": "hold-06-design-weak",
+  "group": "calibration",
+  "held_out": true,
+  "question": "Design a URL shortener.",
+  "answer": "You would need a database and a server. The server takes the URL and saves it and gives back a short one. If there are lots of users you add more servers.",
+  "human": {
+   "relevance": 3,
+   "structure": 2,
+   "specificity": 1,
+   "impact": 1,
+   "clarity": 3
+  }
+ },
+ {
+  "id": "hold-07-review-process-concise",
+  "group": "calibration",
+  "held_out": true,
+  "question": "Tell me about improving team process.",
+  "answer": "Code reviews at Beta Labs took about three days to get a first response. I proposed a daily review slot and a size limit on pull requests. First-response time dropped to under one day within a month.",
+  "human": {
+   "relevance": 5,
+   "structure": 4,
+   "specificity": 4,
+   "impact": 4,
+   "clarity": 5
+  }
+ },
+ {
+  "id": "hold-08-voice-moderate",
+  "group": "calibration",
+  "held_out": true,
+  "question": "Tell me about a time you worked with another team.",
+  "answer": "um so we had to work with the data team, like, for the evaluation set, and, you know, they gave us the labels but the format was kind of different so I wrote a script to convert them and, um, then we could use them. It was fine.",
+  "human": {
+   "relevance": 4,
+   "structure": 3,
+   "specificity": 3,
+   "impact": 2,
+   "clarity": 3
+  }
+ },
+ {
+  "id": "hold-09-overclaim",
+  "group": "calibration",
+  "held_out": true,
+  "question": "What are you most proud of?",
+  "answer": "I basically designed our entire microservices architecture by myself and everything runs perfectly with no problems. Nobody else really contributed anything important and it's the best system in the company.",
+  "human": {
+   "relevance": 3,
+   "structure": 2,
+   "specificity": 1,
+   "impact": 2,
+   "clarity": 3
+  }
+ },
+ {
+  "id": "hold-10-process-vs-thread",
+  "group": "calibration",
+  "held_out": true,
+  "question": "What's the difference between a process and a thread?",
+  "answer": "A process has its own memory space, while threads in the same process share memory. That makes threads cheaper to create and good for sharing data, but you need locks to avoid races. A crash in one process doesn't take down others, whereas a crashing thread can bring down the whole process.",
+  "human": {
+   "relevance": 5,
+   "structure": 3,
+   "specificity": 4,
+   "impact": 3,
+   "clarity": 5
+  }
  }
 ]

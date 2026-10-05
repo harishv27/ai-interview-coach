@@ -12,8 +12,8 @@
 | Scores within ±1 of human | **97%** | ≥ 85% |
 | Ranking agreement | **176/180** | 100% |
 | Failure-mode tests passed | **10/10** | 100% |
-| Latency per answer (p50 / p95) | **11.3s / 70.4s** | < 15s p50 |
-| Tokens per answer | **4896** | — |
+| Latency per answer (p50 / p95) | **7.7s / 58.7s** | < 15s p50 |
+| Tokens per answer | **4908** | — |
 
 <sub>Latest run: 2026-10-05 09:33 UTC · set `eng-v1` · `openai/gpt-oss-120b` · 34 cases × 1 run(s) · local</sub>
 
@@ -39,6 +39,7 @@ xychart-beta
 
 | Date | Set | Model | Runs/case | MAE | Bias | ±1 | Rank | Fail-mode | p50 | p95 | Tokens | Status | Note |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 2026-10-05 10:26 UTC | eng-v1 held-out | `openai/gpt-oss-120b` | 1 | 0.52 | +0.00 | 98% | — | — | 7.7s | 58.7s | 4908 | — | held-out baseline: 10 cases written and labelled before any rule tuning; no fallback to the backup model |
 | 2026-10-05 09:33 UTC | eng-v1 | `openai/gpt-oss-120b` | 1 | 0.53 | +0.17 | 97% | 176/180 | 10/10 | 11.3s | 70.4s | 4896 | ✅ | after impact-rule fix and retry backoff: 34/34 cases, no errors |
 | 2026-10-05 09:14 UTC | eng-v1 | `openai/gpt-oss-120b` | 1 | 0.53 | +0.11 | 94% | 102/109 | — | 61.4s | 119.5s | 4836 | ⚠️ | first eng-v1 run: 5 of 24 calibration cases errored (network blip), impact rule scored conceptual answers too low |
 | 2026-10-04 01:55 UTC | pm-v1 | `openai/gpt-oss-120b` | 2 | 0.53 | +0.35 | 98% | 18/18 | 6/7 | — | — | — | ⚠️ | same code as previous run |
