@@ -14,7 +14,8 @@ const arg = (n, d) => { const i = process.argv.indexOf('--' + n); return i > -1 
 const RUNS = +arg('runs', 1), ONLY = arg('only', '');
 if (!hasKey()) { console.error('Set GROQ_API_KEY first (see .env.example).'); process.exit(1); }
 
-const cases = JSON.parse(fs.readFileSync(path.join(dir, 'cases.json'), 'utf8')).filter((c) => c.id.startsWith(ONLY));
+const IDS = arg('ids', '').split(',').filter(Boolean);
+const cases = JSON.parse(fs.readFileSync(path.join(dir, 'cases.json'), 'utf8')).filter((c) => (IDS.length ? IDS.includes(c.id) : c.id.startsWith(ONLY)));
 const mean = (a) => a.reduce((x, y) => x + y, 0) / (a.length || 1);
 const sd = (a) => { const m = mean(a); return Math.sqrt(mean(a.map((x) => (x - m) ** 2))); };
 const humanOverall = (h) => mean(CRITERIA_KEYS.map((k) => h[k]));

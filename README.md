@@ -39,19 +39,19 @@ The core question behind this project: *what happens when the feedback is confid
 When something looks shaky, the app shows a confidence level and a list of reliability notes instead of hiding it. The details, including known failure modes and what was tried, are in [docs/failure-modes.md](docs/failure-modes.md) and [docs/evaluation-framework.md](docs/evaluation-framework.md).
 
 <!-- perf:start -->
-### Latest evaluation ⚠️
+### Latest evaluation ✅
 
 | Metric | Latest | Target |
 |---|---|---|
 | Calibration MAE vs human labels | **0.53** | ≤ 0.80 |
-| Bias (+ = AI too generous) | **+0.35** | within ±0.30 |
-| Scores within ±1 of human | **98%** | ≥ 85% |
-| Ranking agreement | **18/18** | 100% |
-| Failure-mode tests passed | **6/7** | 100% |
-| Latency per answer (p50 / p95) | **not yet measured** | < 15s p50 |
-| Tokens per answer | **—** | — |
+| Bias (+ = AI too generous) | **+0.17** | within ±0.30 |
+| Scores within ±1 of human | **97%** | ≥ 85% |
+| Ranking agreement | **176/180** | 100% |
+| Failure-mode tests passed | **10/10** | 100% |
+| Latency per answer (p50 / p95) | **11.3s / 70.4s** | < 15s p50 |
+| Tokens per answer | **4896** | — |
 
-<sub>Latest run: 2026-10-04 01:55 UTC · `openai/gpt-oss-120b` · 15 cases × 2 run(s) · local</sub>
+<sub>Latest run: 2026-10-05 09:33 UTC · set `eng-v1` · `openai/gpt-oss-120b` · 34 cases × 1 run(s) · local</sub>
 
 [Full history & trend →](docs/PERFORMANCE.md) · [Usage & user feedback →](docs/USAGE.md)
 <!-- perf:end -->
@@ -117,9 +117,8 @@ There are no accounts and no database. Emails, phone numbers and links are strip
 
 ## Limitations
 
-- The evaluation set is still based on product-manager answers; an engineering-specific set is the next thing to build, so the accuracy numbers above don't yet describe engineering answers.
 - Scores are an aid to practice, not a prediction of how a real interviewer will rate you. The model still leans a little generous.
-- The calibration labels come from a single rater so far. More independent raters would make the accuracy numbers more trustworthy.
+- The calibration labels (24 engineering answers) come from a single rater, the project author. Independent raters would make the accuracy numbers more trustworthy, and the structure criterion (error 0.79) is the weakest.
 - Delivery stats come from the transcript, not the audio, so tone, confidence and accent are not assessed. Speech recognition can still mishear unusual terms.
 - On Groq's free tier the main model allows roughly 60 scored answers a day (200,000 tokens) and about two a minute, shared by every user. When that runs out the app automatically falls back to a smaller model (answers are flagged as less reliable) and shows a clear message if both are exhausted. Use a paid key for anything beyond personal use, and give the scheduled evaluation its own key so it doesn't use up the app's daily allowance.
 - The planned real-user testing sessions (see [docs/user-research.md](docs/user-research.md)) haven't happened yet, so there is no user feedback data to report.

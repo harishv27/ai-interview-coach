@@ -8,46 +8,54 @@
 | Metric | Latest | Target |
 |---|---|---|
 | Calibration MAE vs human labels | **0.53** | ≤ 0.80 |
-| Bias (+ = AI too generous) | **+0.35** | within ±0.30 |
-| Scores within ±1 of human | **98%** | ≥ 85% |
-| Ranking agreement | **18/18** | 100% |
-| Failure-mode tests passed | **6/7** | 100% |
-| Latency per answer (p50 / p95) | **not yet measured** | < 15s p50 |
-| Tokens per answer | **—** | — |
+| Bias (+ = AI too generous) | **+0.17** | within ±0.30 |
+| Scores within ±1 of human | **97%** | ≥ 85% |
+| Ranking agreement | **176/180** | 100% |
+| Failure-mode tests passed | **10/10** | 100% |
+| Latency per answer (p50 / p95) | **11.3s / 70.4s** | < 15s p50 |
+| Tokens per answer | **4896** | — |
 
-<sub>Latest run: 2026-10-04 01:55 UTC · `openai/gpt-oss-120b` · 15 cases × 2 run(s) · local</sub>
+<sub>Latest run: 2026-10-05 09:33 UTC · set `eng-v1` · `openai/gpt-oss-120b` · 34 cases × 1 run(s) · local</sub>
 
 ## Trend
 
 ```mermaid
 xychart-beta
     title "Calibration error (MAE) per eval run — lower is better"
-    x-axis ["#1", "#2", "#3"]
+    x-axis ["#1", "#2", "#3", "#4", "#5"]
     y-axis "MAE" 0 --> 1
-    line [0.47, 0.51, 0.53]
+    line [0.47, 0.51, 0.53, 0.53, 0.53]
 ```
 
 ```mermaid
 xychart-beta
     title "Failure-mode tests passed per eval run"
-    x-axis ["#1", "#2", "#3"]
-    y-axis "passed" 0 --> 7
-    bar [6, 7, 6]
+    x-axis ["#1", "#2", "#3", "#4", "#5"]
+    y-axis "passed" 0 --> 10
+    bar [6, 7, 6, 0, 10]
 ```
 
 ## Run history
 
-| Date | Model | Runs/case | MAE | Bias | ±1 | Rank | Fail-mode | p50 | p95 | Tokens | Status | Note |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 2026-10-04 01:55 UTC | `openai/gpt-oss-120b` | 2 | 0.53 | +0.35 | 98% | 18/18 | 6/7 | — | — | — | ⚠️ | same code as previous run |
-| 2026-10-04 01:46 UTC | `openai/gpt-oss-120b` | 2 | 0.51 | +0.31 | 98% | 18/18 | 7/7 | — | — | — | ⚠️ | after rewrite audit + resume-conflict fixes |
-| 2026-10-04 01:36 UTC | `openai/gpt-oss-120b` | 1 | 0.47 | +0.28 | 100% | 18/18 | 6/7 | — | — | — | ⚠️ | baseline |
+| Date | Set | Model | Runs/case | MAE | Bias | ±1 | Rank | Fail-mode | p50 | p95 | Tokens | Status | Note |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 2026-10-05 09:33 UTC | eng-v1 | `openai/gpt-oss-120b` | 1 | 0.53 | +0.17 | 97% | 176/180 | 10/10 | 11.3s | 70.4s | 4896 | ✅ | after impact-rule fix and retry backoff: 34/34 cases, no errors |
+| 2026-10-05 09:14 UTC | eng-v1 | `openai/gpt-oss-120b` | 1 | 0.53 | +0.11 | 94% | 102/109 | — | 61.4s | 119.5s | 4836 | ⚠️ | first eng-v1 run: 5 of 24 calibration cases errored (network blip), impact rule scored conceptual answers too low |
+| 2026-10-04 01:55 UTC | pm-v1 | `openai/gpt-oss-120b` | 2 | 0.53 | +0.35 | 98% | 18/18 | 6/7 | — | — | — | ⚠️ | same code as previous run |
+| 2026-10-04 01:46 UTC | pm-v1 | `openai/gpt-oss-120b` | 2 | 0.51 | +0.31 | 98% | 18/18 | 7/7 | — | — | — | ⚠️ | after rewrite audit + resume-conflict fixes |
+| 2026-10-04 01:36 UTC | pm-v1 | `openai/gpt-oss-120b` | 1 | 0.47 | +0.28 | 100% | 18/18 | 6/7 | — | — | — | ⚠️ | baseline |
 
 ✅ = meets all targets (MAE ≤ 0.8, |bias| ≤ 0.3, ≥85% within ±1, all failure-mode tests pass).
 
 ## Guardrail activity (latest run)
 
-_not recorded for this run_
+- `dropped_unverified_quote`: 41
+- `rewrite_repaired`: 17
+- `invented_numbers`: 6
+- `too_short`: 3
+- `technical_claims`: 4
+- `low_confidence`: 1
+- `resume_conflict`: 2
 
 High counts of `rewrite_repaired` or `dropped_unverified_quote` mean the underlying model often makes unsupported claims and the guardrails are doing real work — see [failure-modes.md](failure-modes.md).
 

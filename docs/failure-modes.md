@@ -1,5 +1,7 @@
 # Failure-mode analysis: confident but wrong feedback
 
+> **Current results (engineering set `eng-v1`):** 10 of 10 failure-mode tests pass; calibration error 0.53, bias +0.17, 97% of scores within ±1 of the human label, ranking agreement 176/180. Single rater (the project author), 24 calibration + 10 adversarial cases. The older product-manager results below (`pm-v1`) are kept for the history of how the guardrails were built.
+
 The risk is not "feedback is bad" — it's feedback that **sounds authoritative and is wrong**, because a candidate will act on it (reuse a fabricated metric, adopt a wrong technical claim, stop improving because they scored "5").
 
 | # | Failure mode | Why it matters | Mitigation | Test case |

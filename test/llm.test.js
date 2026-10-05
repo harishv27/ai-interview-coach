@@ -45,3 +45,19 @@ test('after a daily-quota rejection the exhausted model is skipped without anoth
   assert.equal(seen.slice(first).filter((m) => m.includes('120b')).length, 0, 'second call must not hit the exhausted model');
   assert.ok(Date.now() - t0 < 1500, 'second call must not wait out a phantom token reservation');
 });
+
+test('network blips are retried with backoff instead of failing the call', async () => {
+  const { callJSON: cj } = await import('../lib/llm.js?fresh=' + Math.random());
+  let n = 0;
+  globalThis.fetch = async () => { n++; if (n < 3) throw Object.assign(new TypeError('fetch failed'), { cause: { code: 'ECONNRESET' } }); return ok('{"ok":1}'); };
+  const t0 = Date.now();
+  assert.deepEqual(await cj({ system: 's', user: 'u', schema: {}, name: 'x', max_tokens: 100, tier: 'fast' }), { ok: 1 });
+  assert.equal(n, 3); assert.ok(Date.now() - t0 >= 1000, 'must wait between network retries');
+});
+
+test('Groq json_validate_failed (HTTP 400) is retried', async () => {
+  const { callJSON: cj } = await import('../lib/llm.js?fresh=' + Math.random());
+  let n = 0;
+  globalThis.fetch = async () => (++n === 1 ? new Response(JSON.stringify({ error: { code: 'json_validate_failed', message: 'Failed to validate JSON' } }), { status: 400 }) : ok('{"ok":2}'));
+  assert.deepEqual(await cj({ system: 's', user: 'u', schema: {}, name: 'x', max_tokens: 100, tier: 'fast' }), { ok: 2 }); assert.equal(n, 2);
+});
