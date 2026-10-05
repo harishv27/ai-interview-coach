@@ -60,3 +60,30 @@ test('spelled-out and magnitude figures in a rewrite are caught and redacted', (
 test('quote matching ignores unicode hyphens, curly quotes and ellipses', () => {
   assert.ok(quoteExists('We ran a data-driven “working session” on it.', 'data‑driven "working session"...'));
 });
+
+import { isNonAnswer, tooSimilar, FOLLOW_UP_SCAFFOLD } from '../lib/guards.js';
+test('non-answers are detected, real short answers are not', () => {
+  for (const a of ["don't know", 'I do not really know', 'no idea', 'pass', 'um not sure', 'yes']) assert.ok(isNonAnswer(a), a);
+  assert.ok(!isNonAnswer('I added a Redis cache and cut p95 latency from 900ms to 300ms.'));
+  assert.ok(!isNonAnswer("I don't know the exact number, but I led the migration of our Postgres cluster to a new region and we finished two weeks early."));
+});
+test('a follow-up that merely repeats the question is replaced with a concrete prompt', () => {
+  assert.ok(tooSimilar('Can you describe a specific project where you took full ownership from concept to production?', 'Can you tell me about a time you took full ownership of a project from concept to production?'));
+  assert.ok(!tooSimilar('What trade-offs did you weigh when choosing Redis over Memcached?', 'Tell me about a time you improved performance.'));
+  const q = 'Tell me about a time you took full ownership of a project from concept to production.';
+  const { evaluation } = applyGuards({ scores, strengths: [], gaps: [], improved_answer: '', confidence: 'high', follow_up: 'Can you describe a project where you took full ownership from concept to production?' }, { answer: long, resume: '', question: q });
+  assert.equal(evaluation.follow_up, FOLLOW_UP_SCAFFOLD);
+});
+test('for a non-answer: no strengths, a single gap, flagged as non-answer', () => {
+  const raw = { scores, strengths: [{ criterion: 'clarity', quote: "don't know", comment: 'x' }], confidence: 'high',
+    gaps: ['relevance', 'structure', 'specificity', 'impact'].map((c) => ({ criterion: c, quote: "don't know", comment: c })), improved_answer: '' };
+  const { evaluation } = applyGuards(raw, { answer: "don't know", resume: '', question: 'Q?' });
+  assert.equal(evaluation.non_answer, true); assert.equal(evaluation.strengths.length, 0); assert.equal(evaluation.gaps.length, 1);
+  const withFollow = applyGuards({ ...raw, follow_up: 'Could you walk me through a different project in detail?' }, { answer: "don't know", resume: '', question: 'Q?' });
+  assert.equal(withFollow.evaluation.follow_up, FOLLOW_UP_SCAFFOLD, 'a non-answer always gets the concrete prompt');
+});
+test('repeated quotes collapse to one finding for a real answer too', () => {
+  const quote = 'moved the connection step later';
+  const raw = { scores, strengths: [], confidence: 'high', improved_answer: '', gaps: [{ criterion: 'structure', quote, comment: 'a' }, { criterion: 'impact', quote, comment: 'b' }] };
+  assert.equal(applyGuards(raw, { answer: long, resume: '', question: '' }).evaluation.gaps.length, 1);
+});

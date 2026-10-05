@@ -543,7 +543,7 @@ $('startBtn').onclick = async () => {
   try {
     const { questions, gaps } = await api('/api/start', { resume, jd, role, count: S.count, mode: S.mode, difficulty: S.level });
     Object.assign(S, { questions, gaps: gaps || [], idx: 0, turns: [] });
-    $('gaps').innerHTML = S.gaps.length ? `<p class="gapline">🎯 Likely to be probed: ${S.gaps.map(esc).join(' · ')}</p>` : '';
+    $('gaps').innerHTML = S.gaps.length ? `<p class="gapline">🎯 Likely to be probed: ${S.gaps.slice(0, 2).map(esc).join(' · ')}</p>` : '';
     $('setup').classList.add('hidden');
     if (S.format === 'live') await startLive();
     else { $('interview').classList.remove('hidden'); step(2); askMain(); }
@@ -600,7 +600,8 @@ function renderFeedback(t) {
   const ev = t.evaluation, last = S.idx === S.questions.length - 1, hasFollow = !t.isFollowUp && ev.follow_up;
   const cl = (k) => S.criteria.find((c) => c.key === k)?.label || k;
   const evs = (arr, cls, title) => arr.length ? `<h3>${title}</h3>` + arr.map((x) => `<div class="ev ${cls}"><div class="c">${esc(cl(x.criterion))}</div><p>${esc(x.comment)}</p><q>${esc(x.quote)}</q></div>`).join('') : '';
-  const notes = [...t.flags.map((f) => f.detail), ...ev.technical_claims_to_verify.map((c) => `Double-check: “${c.quote}” — ${c.concern}`)];
+  const notes = [...t.flags.map((f) => f.detail), ...ev.technical_claims_to_verify.map((c) => `Double-check: “${c.quote}” — ${c.concern}`)].filter((n) => n && n.trim());
+  const outline = ev.improved_kind === 'outline'; // a non-answer: show a starting outline, not a fake answer
   const prev = S.turns.filter((x) => x.qkey === t.qkey && x !== t).at(-1);
   const dv = prev ? +(ev.overall - prev.evaluation.overall).toFixed(1) : null;
   const delta = dv === null ? '' : `<span class="delta ${dv > 0 ? 'up' : dv < 0 ? 'down' : 'flat'}" title="Compared with your previous attempt at this question">${dv > 0 ? '▲ +' : dv < 0 ? '▼ ' : '＝ '}${dv} vs attempt ${t.attempt - 1}</span>`;
@@ -610,8 +611,8 @@ function renderFeedback(t) {
     <div class="hero">${ring(ev.overall)}<div class="verdict"><span class="pill ${tone(ev.overall)}">${label(ev.overall)}</span> ${ev.confidence !== 'high' ? `<span class="pill ${ev.confidence === 'medium' ? 'warn' : 'bad'}" title="How sure the coach is about these scores">${confTxt}</span>` : ''} ${delta}<p>${esc(ev.summary)}</p></div></div>
     ${bars((k) => ev.scores[k])}
     ${notes.length ? `<details class="notes" ${ev.confidence !== 'high' ? 'open' : ''}><summary>⚠️ ${notes.length} reliability note${notes.length > 1 ? 's' : ''}</summary><ul>${notes.map((n) => `<li>${esc(n)}</li>`).join('')}</ul></details>` : ''}
-    <details class="acc" open><summary>Feedback</summary>${evs(ev.strengths, '', 'What worked')}${evs(ev.gaps, 'gap', 'What to improve')}</details>
-    <details class="acc"><summary>Stronger version</summary><div class="rewrite" id="rw">${highlightPlaceholders(ev.improved_answer)}</div><div class="row" style="margin-top:8px"><span class="hint">Fill the highlighted [brackets] with real facts.</span><span class="spacer"></span><button class="link" id="copy">Copy</button></div></details>
+    <details class="acc" ${outline ? '' : 'open'}><summary>Feedback</summary>${evs(ev.strengths, '', 'What worked')}${evs(ev.gaps, 'gap', 'What to improve')}</details>
+    <details class="acc" ${outline ? 'open' : ''}><summary>${outline ? 'How you could answer' : 'Stronger version'}</summary><div class="rewrite" id="rw">${highlightPlaceholders(ev.improved_answer)}</div><div class="row" style="margin-top:8px"><span class="hint">${outline ? 'Built from your resume — use only what is true.' : 'Fill the highlighted [brackets] with real facts.'}</span><span class="spacer"></span><button class="link" id="copy">Copy</button></div></details>
     ${dchips ? `<details class="acc"><summary>Delivery</summary>${dchips}</details>` : ''}
     ${hasFollow ? `<div class="follow"><b>Follow-up</b><div style="margin-top:4px;font-size:17px">${esc(ev.follow_up)}</div></div>` : ''}
     <div class="rate row" id="rate"><span class="hint">Accurate?</span><button data-r="accurate" title="Accurate">👍</button><button data-r="partly" title="Partly">🤔</button><button data-r="wrong" title="Misleading">👎</button></div>

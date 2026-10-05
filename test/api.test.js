@@ -100,3 +100,13 @@ test('voice: status, transcription, speech and interviewer turn work end to end 
   assert.equal(t2.follow_up, ''); assert.equal(t2.move_on, true, 'no follow-ups left -> must move on');
   assert.equal((await post('/api/voice/turn', { role: 'PM', question: 'Q?' }, h)).status, 400);
 });
+
+test('a non-answer gets an outline from the resume (not a fake answer) and a single gap', async () => {
+  const r = await post('/api/answer', { ...ctx, question: 'Tell me about a project you owned.', answer: "don't know" }, { 'x-forwarded-for': '10.0.0.30' });
+  const j = await r.json();
+  assert.equal(r.status, 200);
+  assert.equal(j.evaluation.improved_kind, 'outline'); assert.equal(j.evaluation.non_answer, true);
+  assert.ok(j.evaluation.gaps.length <= 1 && j.evaluation.strengths.length === 0);
+  const real = await (await post('/api/answer', { ...ctx, question: 'Q?', answer: 'I moved the connection step later and ran a three week test and activation rose to 44 percent for all customers' }, { 'x-forwarded-for': '10.0.0.30' })).json();
+  assert.equal(real.evaluation.improved_kind, 'rewrite');
+});
