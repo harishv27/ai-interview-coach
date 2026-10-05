@@ -7,7 +7,7 @@ import { evaluateAnswer } from '../lib/coach.js';
 import { hasKey, MODEL } from '../lib/llm.js';
 import { CRITERIA_KEYS } from '../lib/rubric.js';
 import { inventedNumbers } from '../lib/guards.js';
-import { ROLE, RESUME, JD } from './fixtures.js';
+import { ROLE, RESUME, JD, SET } from './fixtures.js';
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const arg = (n, d) => { const i = process.argv.indexOf('--' + n); return i > -1 ? process.argv[i + 1] : d; };
@@ -35,7 +35,7 @@ const all_ = await pool(cases, 1, runCase);
 const errored = all_.filter((r) => !r.runs.length);
 const results = all_.filter((r) => r.runs.length);
 const summary = {};
-const lines = [`# Eval report`, ``, `- Model: \`${MODEL()}\`  · Runs/case: ${RUNS}  · Date: ${new Date().toISOString()}`, ``];
+const lines = [`# Eval report`, ``, `- Set: \`${SET}\`  · Model: \`${MODEL()}\`  · Runs/case: ${RUNS}  · Date: ${new Date().toISOString()}`, ``];
 
 if (errored.length) lines.push(`## 0. Cases that errored (no usable output)`, ``, ...errored.map((r) => `- ${r.c.id}: ${r.error}`), ``);
 // ---- Calibration vs human labels
@@ -76,6 +76,8 @@ if (adv.length) {
       if (e.flagsTechnicalOrLowConfidence && !(ev.technical_claims_to_verify.length || ev.confidence !== 'high')) fails.push('confident, no claim flagged');
       for (const q of e.noStrengthQuotes || []) if (ev.strengths.some((s) => s.quote.toLowerCase().includes(q.toLowerCase()))) fails.push(`praised: "${q}"`);
       if (e.flagType && !flags.some((f) => f.type === e.flagType)) fails.push(`missing flag ${e.flagType}`);
+      if (e.nonAnswer && !(ev.non_answer && ev.improved_kind === 'outline' && ev.gaps.length <= 1 && ev.strengths.length === 0)) fails.push('non-answer not handled (outline / single gap / no strengths)');
+      if (e.nonAnswer && ev.follow_up && /^(can you|could you) (describe|tell)/i.test(ev.follow_up) && ev.follow_up.length > 150) fails.push('follow-up repeats the question');
       if (e.noInventedNumbers && inventedNumbers(ev.improved_answer, c.answer, RESUME).length) fails.push('invented numbers in rewrite');
     }
     const ok = !fails.length; if (ok) pass++;
@@ -99,6 +101,8 @@ if (metas.length) {
   lines.push(`## 4. Performance`, ``, `- Latency per answer: p50 **${(summary.latencyP50 / 1000).toFixed(1)}s**, p95 **${(summary.latencyP95 / 1000).toFixed(1)}s** (n=${metas.length})`, `- Tokens per answer: **${summary.avgTokens}** (${Math.round(mean(metas.map((m) => m.promptTokens)))} in / ${Math.round(mean(metas.map((m) => m.completionTokens)))} out) over ${summary.avgCalls} model calls`, ``);
 }
 summary.errors = errored.length;
+summary.fallbackRate = metas.length ? metas.filter((m) => m.fallback).length / metas.length : null;
+if (summary.fallbackRate) lines.push(`> ⚠️ ${Math.round(summary.fallbackRate * 100)}% of answers were scored by the smaller backup model because the main model's daily free quota was exhausted; results are less reliable than a full-quota run.`, ``);
 // Quality gate (use --gate in CI): fail the run if quality regresses below targets.
 const gateReasons = [];
 if (summary.adv && summary.adv[0] / summary.adv[1] < 0.85) gateReasons.push(`failure-mode pass rate ${summary.adv.join('/')} < 85%`);
@@ -114,6 +118,6 @@ const stamp = new Date().toISOString().replace(/[:.]/g, '-');
 fs.writeFileSync(path.join(dir, 'results', `${stamp}.md`), report);
 fs.writeFileSync(path.join(dir, 'results', `${stamp}.raw.json`), JSON.stringify(results, null, 2));
 // ---- Append to the run history (read by scripts/report.js -> docs/PERFORMANCE.md)
-fs.appendFileSync(path.join(dir, 'results', 'history.jsonl'), JSON.stringify({ date: new Date().toISOString(), model: MODEL(), runsPerCase: RUNS, cases: cases.length, source: process.env.GITHUB_ACTIONS ? 'github-actions' : 'local', ...summary }) + '\n');
+fs.appendFileSync(path.join(dir, 'results', 'history.jsonl'), JSON.stringify({ date: new Date().toISOString(), set: SET, model: MODEL(), runsPerCase: RUNS, cases: cases.length, source: process.env.GITHUB_ACTIONS ? 'github-actions' : 'local', ...summary }) + '\n');
 console.log(report);
 if (process.argv.includes('--gate') && gateReasons.length) { console.error('GATE FAILED: ' + gateReasons.join('; ')); process.exit(1); }

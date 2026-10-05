@@ -30,10 +30,10 @@ const summary = `| Metric | Latest | Target |
 | Latency per answer (p50 / p95) | **${withPerf ? sec(withPerf.latencyP50) + ' / ' + sec(withPerf.latencyP95) : 'not yet measured'}** | < 15s p50 |
 | Tokens per answer | **${withPerf ? withPerf.avgTokens : '—'}** | — |
 
-<sub>Latest run: ${day(last.date)} · \`${last.model}\` · ${last.cases} cases × ${last.runsPerCase} run(s) · ${last.source}</sub>`;
+<sub>Latest run: ${day(last.date)} · set \`${last.set || 'pm-v1'}\` · \`${last.model}\` · ${last.cases} cases × ${last.runsPerCase} run(s) · ${last.source}</sub>`;
 
 const rows = [...hist].reverse().slice(0, 25).map((h, i) =>
-  `| ${day(h.date)} | \`${h.model}\` | ${h.runsPerCase} | ${f(h.mae)} | ${h.bias >= 0 ? '+' : ''}${f(h.bias)} | ${pct(h.within1)} | ${h.rank ? h.rank.join('/') : '—'} | ${h.adv ? h.adv.join('/') : '—'} | ${sec(h.latencyP50)} | ${sec(h.latencyP95)} | ${h.avgTokens ?? '—'} | ${status(h)} | ${h.note || h.source || ''} |`).join('\n');
+  `| ${day(h.date)} | ${h.set || 'pm-v1'} | \`${h.model}\` | ${h.runsPerCase} | ${f(h.mae)} | ${h.bias >= 0 ? '+' : ''}${f(h.bias)} | ${pct(h.within1)} | ${h.rank ? h.rank.join('/') : '—'} | ${h.adv ? h.adv.join('/') : '—'} | ${sec(h.latencyP50)} | ${sec(h.latencyP95)} | ${h.avgTokens ?? '—'} | ${status(h)} | ${h.note || h.source || ''} |`).join('\n');
 
 const xs = hist.map((_, i) => `"#${i + 1}"`).join(', ');
 const charts = `\`\`\`mermaid
@@ -71,8 +71,8 @@ ${charts}
 
 ## Run history
 
-| Date | Model | Runs/case | MAE | Bias | ±1 | Rank | Fail-mode | p50 | p95 | Tokens | Status | Note |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Date | Set | Model | Runs/case | MAE | Bias | ±1 | Rank | Fail-mode | p50 | p95 | Tokens | Status | Note |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 ${rows}
 
 ✅ = meets all targets (MAE ≤ 0.8, |bias| ≤ 0.3, ≥85% within ±1, all failure-mode tests pass).

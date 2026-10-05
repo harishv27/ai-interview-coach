@@ -1,14 +1,13 @@
 name: Eval
-# Runs the calibration + failure-mode suite against the live model, publishes the results to the
-# run summary, and commits refreshed docs/PERFORMANCE.md + eval/results (history.jsonl).
+# Manual only (Actions tab -> Eval -> Run workflow): a full run spends a large share of the free daily
+# token allowance, so it is never scheduled. Publishes results to the run summary and commits refreshed
+# docs/PERFORMANCE.md + eval/results (history.jsonl).
 on:
   workflow_dispatch:
     inputs:
       runs:
         description: Runs per case (more = better variance estimate, slower)
         default: '2'
-  schedule:
-    - cron: '0 6 * * 1' # Mondays 06:00 UTC
 permissions:
   contents: write
 concurrency: eval

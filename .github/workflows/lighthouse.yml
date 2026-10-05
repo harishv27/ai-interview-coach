@@ -1,0 +1,19 @@
+name: Lighthouse
+# Performance, accessibility and best-practice audit of the deployed site. No AI calls, so it costs no model quota.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 1'
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: treosh/lighthouse-ci-action@v12
+        with:
+          urls: |
+            https://ai-interview-coach-nine-plum.vercel.app/
+            https://ai-interview-coach-nine-plum.vercel.app/privacy.html
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+          runs: 2
