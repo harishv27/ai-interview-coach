@@ -308,6 +308,12 @@
   button.hrow { width:100%; background:none; border:0; border-top:1px solid var(--line); border-radius:0; color:inherit; text-align:left; padding:8px 6px; cursor:pointer; font-size:14px; }
   button.hrow:hover { background:var(--soft); } button.hrow span::after { content:" ›"; color:var(--mute); }
   .backline { margin:-4px 0 6px; }
+  .stage { position:relative; }
+  .selfview { position:absolute; right:16px; top:48px; width:128px; height:96px; object-fit:cover; border-radius:12px; transform:scaleX(-1); background:#000; box-shadow:var(--shadow); border:2px solid var(--card); }
+  @media (max-width:520px) { .selfview { width:88px; height:66px; right:10px; top:44px; } }
+  .recvideo { width:100%; max-height:260px; border-radius:12px; background:#000; margin-top:8px; }
+  .marks { display:grid; gap:6px; margin:10px 0 6px; }
+  button.mark { text-align:left; padding:8px 12px; font-size:13.5px; border-radius:10px; display:flex; justify-content:space-between; gap:10px; } button.mark small { color:var(--mute); flex:none; }
   @media (prefers-reduced-motion:reduce){ *{ animation:none !important; transition:none !important; } }
 </style>
 </head>
@@ -369,6 +375,7 @@
                 <button type="button" data-v="live">🎙 Live voice</button>
               </div>
               <div class="hint" id="formatNote" style="margin-top:8px"></div>
+              <label class="consent hidden" id="camRow" style="margin-top:12px"><input id="camOpt" type="checkbox"><span>📹 Also record video of me to review afterwards. It stays on this device and is never uploaded.</span></label>
             </div>
 
             <label class="consent"><input id="consent" type="checkbox"><span>My text is sent to an AI service to generate feedback (contact details are removed first). <a href="/privacy.html" target="_blank" rel="noopener">Privacy</a></span></label>
@@ -400,6 +407,7 @@
         <div class="live-grid">
           <div class="card stage">
             <div class="top-row"><span id="liveProgress"></span><span id="liveTimer">0:00</span></div>
+            <video id="selfView" class="selfview hidden" muted playsinline autoplay aria-label="Your camera preview"></video>
             <div class="orb" id="orb" data-state="idle" aria-hidden="true">🎙</div>
             <div class="live-state" id="liveState" aria-live="polite">Ready when you are</div>
             <div class="caption" id="liveCaption"></div>
@@ -477,6 +485,7 @@ try { const d = JSON.parse(store.get('draft') || '{}'); $('resume').value = d.re
 $('format').onclick = (e) => {
   const b = e.target.closest('button'); if (!b) return;
   S.format = b.dataset.v; [...$('format').children].forEach((x) => x.classList.toggle('on', x === b));
+  $('camRow').classList.toggle('hidden', S.format !== 'live');
   $('formatNote').textContent = S.format === 'live' && !LIVE_OK ? 'Audio recording isn’t available in this browser, but you can still type your answers.' : '';
   $('startBtn').textContent = S.format === 'live' ? 'Start live interview →' : 'Start interview →';
 };
@@ -571,7 +580,7 @@ $('startBtn').onclick = async () => {
   const missing = [!jd && 'job description (or pick a template)', !role && 'role'].filter(Boolean);
   if (missing.length) { $('setupErr').textContent = 'Still needed: ' + missing.join(', ') + '.'; return; }
   if (!$('consent').checked) { $('setupErr').textContent = 'Please tick the consent box to continue.'; return; }
-  Object.assign(S, { role, resume, jd });
+  Object.assign(S, { role, resume, jd, camera: S.format === 'live' && $('camOpt').checked });
   const b = $('startBtn'); b.disabled = true; b.innerHTML = '<span class="spinner" style="display:inline-block;vertical-align:-4px;margin-right:10px;border-top-color:#fff"></span>Designing your interview…'; $('setupErr').textContent = '';
   try {
     const { questions, gaps } = await api('/api/start', { resume, jd, role, count: S.count, mode: S.mode, difficulty: S.level });
@@ -742,8 +751,14 @@ async function speak(text) {
 
 /* --- listening: record, detect the end of the answer from silence --- */
 async function initMic() {
-  try { L.mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } }); }
-  catch { L.mic = null; return false; }
+  const audio = { echoCancellation: true, noiseSuppression: true, autoGainControl: true };
+  try { L.mic = await navigator.mediaDevices.getUserMedia({ audio, video: S.camera ? { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' } : false }); }
+  catch {
+    L.mic = null;
+    if (S.camera) { try { L.mic = await navigator.mediaDevices.getUserMedia({ audio }); L.camFailed = true; } catch {} } // camera denied: carry on with audio only
+    if (!L.mic) return false;
+  }
+  L.audioStream = new MediaStream(L.mic.getAudioTracks()); // only audio is ever sent for transcription
   L.ctx = new (window.AudioContext || window.webkitAudioContext)(); await L.ctx.resume?.();
   L.analyser = L.ctx.createAnalyser(); L.analyser.fftSize = 1024; L.ctx.createMediaStreamSource(L.mic).connect(L.analyser);
   return true;
@@ -751,7 +766,7 @@ async function initMic() {
 function listen({ maxMs = 150000, noSpeechMs = 14000, silenceMs = 2200 } = {}) {
   return new Promise((resolve) => {
     const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'].find((m) => MediaRecorder.isTypeSupported?.(m)) || '';
-    const rec = new MediaRecorder(L.mic, mime ? { mimeType: mime } : undefined); const chunks = [];
+    const rec = new MediaRecorder(L.audioStream || L.mic, mime ? { mimeType: mime } : undefined); const chunks = [];
     rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
     const buf = new Uint8Array(L.analyser.fftSize), noise = [];
     const startedAt = Date.now(); let speechAt = 0, lastVoice = 0, voiced = 0, floor = 0.01, done = false, iv;
@@ -797,6 +812,7 @@ async function getAnswer() {
   if (!L.mic) { orb('listening', 'Type your answer on the right →'); while (!L.typedText && !L.end && !L.skip && !L.repeatReq) await sleep(150); const t = L.typedText || ''; L.typedText = null; return { text: t, ms: Date.now() - start }; }
   if (L.typedText) { const t = L.typedText; L.typedText = null; return { text: t, ms: 1000 }; }
   const rec = await listen();
+  if (L.sessRec && rec.spoke) { const end = Date.now() - L.sessT0; L.marks.push({ q: S.idx, start: Math.max(0, end - rec.ms), end }); }
   if (L.typedText) { const t = L.typedText; L.typedText = null; return { text: t, ms: Date.now() - start }; }
   if (L.end || L.skip || L.repeatReq) return { text: '', ms: 0 };
   if (!rec.spoke) return { text: '', ms: rec.ms, silent: true };
@@ -843,7 +859,27 @@ async function runQuestion(i) {
   if (L.skip && !L.end && !last) { logLine('ai', 'No problem, let’s move on.'); await speak('No problem, let’s move on.'); }
 }
 
+// Whole-session video, held in this tab's memory only. It is never uploaded and is not saved with the report.
+function startSessionRecording() {
+  if (!L.mic.getVideoTracks().length) return;
+  const mime = ['video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4'].find((m) => MediaRecorder.isTypeSupported?.(m)) || '';
+  try {
+    L.sessChunks = []; L.sessMime = mime.split(';')[0] || 'video/webm';
+    L.sessRec = new MediaRecorder(L.mic, { ...(mime ? { mimeType: mime } : {}), videoBitsPerSecond: 600000, audioBitsPerSecond: 64000 });
+    L.sessRec.ondataavailable = (e) => e.data.size && L.sessChunks.push(e.data);
+    L.sessT0 = Date.now(); L.marks = []; L.sessRec.start(2000);
+    $('selfView').srcObject = new MediaStream(L.mic.getVideoTracks()); $('selfView').classList.remove('hidden');
+  } catch { L.sessRec = null; }
+}
+function stopSessionRecording() {
+  return new Promise((res) => {
+    if (!L.sessRec || L.sessRec.state === 'inactive') return res();
+    L.sessRec.onstop = () => { L.videoUrl = URL.createObjectURL(new Blob(L.sessChunks, { type: L.sessMime })); res(); };
+    try { L.sessRec.stop(); } catch { res(); }
+  });
+}
 function teardownLive() {
+  $('selfView').srcObject = null; $('selfView').classList.add('hidden');
   L.on = false; clearInterval(L.timer); stopAllAudio();
   try { L.mic?.getTracks().forEach((t) => t.stop()); } catch {} try { L.ctx?.close(); } catch {}
 }
@@ -852,6 +888,7 @@ async function wrapUpLive(early) {
   orb('thinking', 'Preparing your feedback…'); $('liveControls').classList.add('hidden');
   if (!early) { const bye = 'That’s all my questions. Thank you for your time. Give me a moment to put your feedback together.'; logLine('ai', bye); await Promise.all([speak(bye), Promise.allSettled(L.evals)]); }
   else await Promise.allSettled(L.evals);
+  await stopSessionRecording();
   teardownLive();
   if (!S.turns.length) { toast(L.evalErrors[0] || 'No answers were captured, so there is nothing to score.'); setTimeout(() => location.reload(), 1800); return; }
   if (L.evalErrors.length) toast(`${L.evalErrors.length} answer(s) couldn’t be scored: ${L.evalErrors[0]}`);
@@ -867,6 +904,7 @@ async function beginLive() {
   $('liveHint').textContent = !micOk ? 'Microphone unavailable — type your answers in the box on the right.' : L.tts === 'orpheus' ? '' : 'Using your browser’s built-in voice for the interviewer.';
   $('liveIntro').classList.add('hidden'); $('liveControls').classList.remove('hidden');
   L.on = true; L.end = false; L.t0 = Date.now(); L.timer = setInterval(tickLive, 1000); L.vocab = buildVocab();
+  if (S.camera && L.mic) { startSessionRecording(); if (L.camFailed) $('liveHint').textContent = 'Camera unavailable — continuing with audio only.'; }
   S.turns = []; S.idx = 0; S.current = { isFollowUp: false }; renderOutline();
   const n = S.questions.length;
   const hello = `Hi, I’m Alex, and I’ll be interviewing you for the ${S.role} position today. We’ll go through ${n} questions, and I may ask a follow-up or two. Answer out loud, just like a real interview. Ready? Let’s begin.`;
@@ -876,7 +914,7 @@ async function beginLive() {
   if (!L.end) await wrapUpLive(false);
 }
 async function startLive() {
-  S.turns = []; L.log = []; L.evals = []; L.evalErrors = []; L.end = false; L.wrapped = false; L.main = null; $('liveLog').innerHTML = '';
+  S.turns = []; L.log = []; L.evals = []; L.evalErrors = []; L.end = false; L.wrapped = false; L.main = null; L.marks = []; L.videoUrl = null; L.camFailed = false; $('liveLog').innerHTML = '';
   $('live').classList.remove('hidden'); step(2); orb('idle');
   $('liveProgress').textContent = `${S.questions.length} questions · ${MODE_LABEL[S.mode]}`;
 }
@@ -922,7 +960,7 @@ function saveReport(rep) {
     store.set('reports', JSON.stringify(keep));
   } catch {}
 }
-function renderReport(rep, { saved = false } = {}) {
+function renderReport(rep, { saved = false, video = null } = {}) {
   const r = $('results'), T = rep.turns, when = new Date(rep.id).toLocaleDateString();
   const weakest = S.criteria.map((c) => ({ c, v: rep.avgs[c.key] })).sort((a, b) => a.v - b.v)[0];
   const kcard = (name, v, parts) => `<div class="kcard"><span>${name}</span><b class="${tone(v)}">${v}</b><small>${parts}</small></div>`;
@@ -932,9 +970,10 @@ function renderReport(rep, { saved = false } = {}) {
     ${rep.strengths.length ? `<h3>Strengths</h3><ul class="clean">${rep.strengths.slice(0, 3).map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
     ${rep.priorities.length ? `<h3>Practise next</h3><ol class="clean">${rep.priorities.slice(0, 3).map((x) => `<li>${esc(x)}</li>`).join('')}</ol>` : ''}
     <div class="row" style="margin-top:20px">${saved ? '<button class="primary" id="backBtn2" type="button">Start a new interview</button>' : '<button class="primary" onclick="location.reload()">Practise again</button>'}<button id="card">Score card</button><button id="dl">Download report</button></div></div>
-    <div class="res-side"><div class="card"><h2>Questions</h2>${T.map((t, i) => `<div class="qrow"><span>${t.isFollowUp ? '↳ ' : `<b>Q${T.slice(0, i + 1).filter((x) => !x.isFollowUp).length}.</b> `}${esc(t.question)}${t.attempts > 1 ? ` <span class="hint">(${t.attempts} attempts)</span>` : ''}</span><span class="pill ${tone(t.evaluation.overall)}">${t.evaluation.overall}</span></div>`).join('')}</div>
+    <div class="res-side">${video ? `<div class="card"><h2>Your recording</h2><video id="recVideo" class="recvideo" src="${video.url}" controls playsinline></video><div class="marks">${video.marks.map((m) => `<button type="button" class="mark" data-t="${(m.start / 1000).toFixed(1)}"><span>Q${m.q + 1} · ${esc((S.questions[m.q]?.question || '').slice(0, 56))}…</span><small>${Math.floor(m.start / 60000)}:${String(Math.floor(m.start / 1000) % 60).padStart(2, '0')}</small></button>`).join('')}</div><p class="hint" style="margin:6px 0 8px">Stays on this device. It isn’t saved with the report, so download it if you want to keep it.</p><a class="link" href="${video.url}" download="interview-recording.${video.ext}">⬇ Download recording</a></div>` : ''}<div class="card"><h2>Questions</h2>${T.map((t, i) => `<div class="qrow"><span>${t.isFollowUp ? '↳ ' : `<b>Q${T.slice(0, i + 1).filter((x) => !x.isFollowUp).length}.</b> `}${esc(t.question)}${t.attempts > 1 ? ` <span class="hint">(${t.attempts} attempts)</span>` : ''}</span><span class="pill ${tone(t.evaluation.overall)}">${t.evaluation.overall}</span></div>`).join('')}</div>
     <details class="card t"><summary>Transcript &amp; rewrites</summary>${T.map((t) => `<h3>${t.isFollowUp ? 'Follow-up' : 'Question'}: ${esc(t.question)}</h3><p>${esc(t.answer)}</p><p class="muted"><b>${t.evaluation.improved_kind === 'outline' ? 'How you could answer' : 'Stronger version'}:</b> ${esc(t.evaluation.improved_answer)}</p>`).join('')}</details></div></div>`;
   animate(r);
+  r.querySelectorAll('.mark').forEach((b) => (b.onclick = () => { const v = $('recVideo'); v.currentTime = +b.dataset.t; v.play().catch(() => {}); }));
   const back = () => { $('results').classList.add('hidden'); $('setup').classList.remove('hidden'); renderHistory(); step(1); };
   if (saved) { $('backBtn').onclick = back; $('backBtn2').onclick = back; }
   $('dl').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([reportMarkdown(rep)], { type: 'text/markdown' })); a.download = 'interview-report.md'; a.click(); };
@@ -959,7 +998,7 @@ async function finish() {
   const slim = ({ facts_used, ...ev }) => ev; // the saved copy doesn't need the rewrite's working notes
   const rep = { id: Date.now(), role: S.role, mode: S.mode, level: S.level, format: S.format, overall, avgs, ...kc(avgs), headline: d.headline, strengths: d.top_strengths, priorities: d.top_priorities,
     turns: T.map((t) => ({ question: t.question, answer: t.answer, isFollowUp: t.isFollowUp, attempts: attempts(t), delivery: t.delivery, flags: t.flags, evaluation: slim(t.evaluation) })) };
-  saveReport(rep); renderReport(rep); renderOutline();
+  saveReport(rep); renderReport(rep, { video: L.videoUrl ? { url: L.videoUrl, marks: L.marks, ext: L.sessMime.includes('mp4') ? 'mp4' : 'webm' } : null }); renderOutline();
 }
 $('howBtn').onclick = () => $('howDlg').showModal();
 $('howClose').onclick = () => $('howDlg').close();

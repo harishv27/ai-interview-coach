@@ -19,6 +19,7 @@ Most "AI feedback" tools just sound confident. This project is as much about **c
 - **Evidence for everything.** Each strength and weakness quotes your exact words. The server checks the quote really is in your answer and drops it if not.
 - **A rewritten answer** built only from facts in your answer and resume. Anything unknown becomes a `[placeholder]` for you to fill in, never an invented number.
 - **Delivery stats:** filler words, speaking pace and overly long sentences.
+- **Optional camera recording** for live interviews: watch yourself back, jump to each answer, and download the video. It is recorded in your browser's memory only, never uploaded and never saved with the report.
 - **Retry any answer** and see whether your score improved. The debrief counts your best attempt.
 - **Knowledge and Communication scores** in every report (derived from the five criteria), with a progress chart for both across sessions.
 - **Saved reports.** Your last 10 full reports are kept in your browser only, and you can reopen any of them, download it, or export a score card.
@@ -30,6 +31,7 @@ Choose **Live voice interview** on the setup screen and press *Begin*. The inter
 
 - **Listening:** your answers are transcribed with Groq Whisper (`whisper-large-v3-turbo`). Names and jargon from your resume and the job posting are passed as a vocabulary hint, so "Redis" and "FastAPI" come out right.
 - **Speaking:** the interviewer uses Groq's Orpheus voice when it is available, and your browser's built-in voice otherwise. Orpheus must be enabled once by your Groq organisation admin by accepting its terms at [console.groq.com/playground?model=canopylabs%2Forpheus-v1-english](https://console.groq.com/playground?model=canopylabs%2Forpheus-v1-english); the app detects this automatically and switches voices.
+- **Camera (optional):** tick *record video* before starting. A small self-view appears, the whole session is recorded locally, and the report adds a player with a marker for each of your answers. Only the audio of each answer is sent for transcription. The recording captures you, not the interviewer's voice, and there is no automatic body-language analysis.
 - **Turn-taking** is half-duplex (it never listens while it speaks), so headphones help but aren't required. It needs a browser with microphone recording (any current Chrome, Edge, Firefox or Safari) over HTTPS or localhost.
 
 ## How the feedback is kept honest
