@@ -18,12 +18,12 @@ Real problems found while building and testing this project, with how each was f
 | 12 | Groq sometimes rejects the model's JSON itself (HTTP 400 `json_validate_failed`) | One evaluation case errored | Treated as retryable | Unit test |
 | 13 | Rate-limit waits were longer than necessary (p50 61s in one run) | Latency numbers in the evaluation report | The token estimate assumed 3.2 characters per token (real figure is about 4) and padded the reservation; both corrected. p50 per answer is now 11s during back-to-back evaluation runs | Latency recorded in every evaluation run |
 
-## Candidate change awaiting validation
-| # | Change | Evidence so far | Why it is not shipped |
+## Candidate change tried and rejected
+| # | Change | Result | Decision |
 |---|---|---|---|
-| 14 | Stricter **structure** rule: a vague result ("it went well", "it worked") counts as no result (max 3), and conceptual or design answers are judged on logical order (clarify → approach → trade-offs → verify) so a well-ordered technical answer can score 4–5 | Structure was the weakest criterion (error 0.79; over-credits vague stories, under-credits ordered technical answers; the same pattern appeared on the held-out set). On the 21 dev cases scored by the main model in both runs, structure error fell from 0.81 to 0.48 and overall error from 0.51 to 0.39 | The rule was tuned on those same dev cases, so that gain is expected; the held-out cases (10, labelled before tuning) could not be scored properly because the main model's daily free quota ran out partway through the run (39% of answers fell back to the smaller model). Re-run on a day with quota, check the held-out error, and only then ship |
+| 14 | Stricter **structure** rule: a vague result ("it went well", "it worked") counts as no result (max 3), and conceptual or design answers are judged on logical order | Validation run 2026-10-12 (44 cases, 0 answers on the backup model): held-out error 0.42 (baseline 0.52), dev error 0.47 (baseline 0.53), 97% within ±1, ranking 176/180. **But failure-mode tests were 9/10**: `adv-02-wrong-technical` praised two incorrect claims ("lists are immutable", "O(n log n)") | Reverted. The decision rule below was written before the run and requires 10/10 failure-mode tests |
 
-**Baseline for that check** (current rules, held-out set, main model for every answer): error 0.52, bias 0.00, 98% of scores within ±1.
+What I take from it: the accuracy gain looks real, but the stricter wording seems to make the model more willing to credit a well-ordered answer even when its technical claims are wrong, which is the exact failure this project cares most about. One run per case cannot tell a real regression from noise, and I did not re-run until it passed, because that would defeat the pre-registered rule. A better next attempt would keep the structure wording and add an explicit "an ordered answer with false claims is still wrong" line, then be validated the same way. Raw results: `eval/results/2026-10-12T07-41-47-964Z.md`.
 
 **Decision rule, written before the validation run.** Ship the candidate only if *all* of these hold on one full run (dev + held-out + adversarial, 44 cases, `--record`):
 1. No answer is scored by the backup model (a valid run).
