@@ -25,6 +25,13 @@ Real problems found while building and testing this project, with how each was f
 
 **Baseline for that check** (current rules, held-out set, main model for every answer): error 0.52, bias 0.00, 98% of scores within ±1.
 
+**Decision rule, written before the validation run.** Ship the candidate only if *all* of these hold on one full run (dev + held-out + adversarial, 44 cases, `--record`):
+1. No answer is scored by the backup model (a valid run).
+2. Held-out overall error is no worse than 0.57 (baseline 0.52 plus a 0.05 tolerance), and held-out **structure** error is below its baseline of 0.70.
+3. Dev structure error is below the previous 0.79, and dev overall error is no worse than 0.58 (previous 0.53 plus 0.05).
+4. All 10 failure-mode tests still pass and no case errors.
+If any condition fails, the change is reverted and the result is recorded here instead.
+
 ## Lessons about evaluating on a free tier
 - A 44-case run uses roughly 130,000 tokens of the main model's 200,000-token daily allowance; four large runs in one day exhausted it. The runner now reports the share of answers scored by the backup model and refuses to treat such a run as valid evidence.
 - Partial runs (`--only`, `--ids`) are no longer written to the history, and held-out results are reported separately so tuning on the dev set cannot flatter the headline number.
