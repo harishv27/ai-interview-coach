@@ -21,3 +21,16 @@ test('in-memory rate limiter counts and blocks past the limit', async () => {
   const r = []; for (let i = 0; i < 4; i++) r.push((await hit(k, 3, 60)).ok);
   assert.deepEqual(r, [true, true, true, false]);
 });
+
+test('redaction and delivery stats stay fast on hostile input (no regex blow-up)', () => {
+  const hostile = ['1-'.repeat(50000) + 'x', '.'.repeat(100000), '1 '.repeat(50000) + 'x', 'a'.repeat(100000) + '@', '@' + 'a.'.repeat(50000)];
+  for (const h of hostile) {
+    const t0 = Date.now(); redactPII(h); deliveryMetrics(h, 20, 'text');
+    assert.ok(Date.now() - t0 < 400, `took ${Date.now() - t0}ms on ${h.slice(0, 8)}…`);
+  }
+});
+test('phone redaction still catches real numbers and leaves ordinary numbers alone', () => {
+  assert.match(redactPII('call +91 98765 43210 or (415) 555-0134 or 415.555.0134'), /^call \[phone\] or \[phone\] or \[phone\]$/);
+  const keep = 'cut latency from 2800ms to 1100ms for 3,000 merchants, a 70% drop in 2021-2023 and 12345';
+  assert.equal(redactPII(keep), keep);
+});
