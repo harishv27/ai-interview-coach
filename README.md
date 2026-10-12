@@ -12,14 +12,16 @@ Most "AI feedback" tools just sound confident. This project is as much about **c
 
 ## What it does
 
-- **Tailored questions** from your resume and the job posting (your stack, projects and the role's requirements), with a heads-up on the requirements your resume doesn't clearly cover.
+- **Tailored questions** from your resume and the job posting (your stack, projects and the role's requirements), with a heads-up on the requirements your resume doesn't clearly cover. The resume is optional.
+- **18 practice templates** (roles, round styles and skills such as LLM/RAG, SQL, system design) that fill in the role, focus, difficulty and a job description in one click. They are unofficial practice templates, not any company's real interview.
 - **Two ways to practise.** *Type & get coached* gives scores and a rewrite after every answer. *Live voice interview* is a hands-free spoken round: the interviewer talks, listens, reacts and asks follow-ups, and you get the full scored report at the end, like a real interview.
 - **Scores on five criteria:** relevance, structure, specificity, business impact and clarity. Each is a 1–5 score with written definitions, so a "4" means the same thing every time (see `lib/rubric.js`).
 - **Evidence for everything.** Each strength and weakness quotes your exact words. The server checks the quote really is in your answer and drops it if not.
 - **A rewritten answer** built only from facts in your answer and resume. Anything unknown becomes a `[placeholder]` for you to fill in, never an invented number.
 - **Delivery stats:** filler words, speaking pace and overly long sentences.
 - **Retry any answer** and see whether your score improved. The debrief counts your best attempt.
-- **Progress tracking** stored in your browser only, plus a downloadable report and score card.
+- **Knowledge and Communication scores** in every report (derived from the five criteria), with a progress chart for both across sessions.
+- **Saved reports.** Your last 10 full reports are kept in your browser only, and you can reopen any of them, download it, or export a score card.
 - Focus modes: mixed, behavioural, technical depth and system design (including LLM/RAG design for AI roles), plus a tougher difficulty and a light/dark theme.
 
 ## Live voice interview

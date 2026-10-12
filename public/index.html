@@ -298,6 +298,16 @@
   dialog { border:1px solid var(--line); border-radius:var(--r); background:var(--card); color:var(--ink); padding:22px; max-width:460px; width:calc(100% - 32px); box-shadow:var(--shadow); }
   dialog::backdrop { background:rgba(10,12,20,.5); }
   .top p:empty { display:none; }
+  .tmpl { margin-top:0 !important; margin-bottom:6px; }
+  .kc { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:18px 0 6px; }
+  .kcard { border:1px solid var(--line); border-radius:14px; padding:12px 14px; background:var(--soft); }
+  .kcard span { display:block; font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--mute); font-weight:600; }
+  .kcard b { font-size:30px; letter-spacing:-.02em; line-height:1.15; } .kcard b.good { color:var(--good); } .kcard b.warn { color:var(--warn); } .kcard b.bad { color:var(--bad); }
+  .kcard small { display:block; color:var(--mute); font-size:12px; }
+  .legend { display:flex; gap:16px; flex-wrap:wrap; font-size:12.5px; color:var(--mute); margin:0 0 8px; } .legend i { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; } .legend b { color:var(--ink); }
+  button.hrow { width:100%; background:none; border:0; border-top:1px solid var(--line); border-radius:0; color:inherit; text-align:left; padding:8px 6px; cursor:pointer; font-size:14px; }
+  button.hrow:hover { background:var(--soft); } button.hrow span::after { content:" ›"; color:var(--mute); }
+  .backline { margin:-4px 0 6px; }
   @media (prefers-reduced-motion:reduce){ *{ animation:none !important; transition:none !important; } }
 </style>
 </head>
@@ -331,9 +341,10 @@
         <div class="setup-layout solo" id="setupLayout">
           <div class="card form">
             <div class="form-head"><h2>Your details</h2><button class="link hidden" id="clearForm" type="button" title="Remove the saved resume, job description and role from this browser">✕ Clear saved details</button></div>
+            <div class="field tmpl"><div class="lab"><span>Quick start</span><small>unofficial practice templates</small></div><select id="template" aria-label="Interview template"><option value="">Choose a template (optional)…</option></select></div>
             <div class="two">
               <div class="field">
-                <div class="lab"><span>Resume</span></div>
+                <div class="lab"><span>Resume</span><small>optional · makes questions personal</small></div>
                 <label class="drop" id="drop" for="resumeFile">📄 Upload a PDF or drop it here</label>
                 <input id="resumeFile" type="file" accept=".pdf,.txt,.md" class="hidden">
                 <div id="fileChip"></div>
@@ -479,10 +490,29 @@ $('clearForm').onclick = () => {
   try { localStorage.removeItem('draft'); } catch {}
   counts(); toast('Cleared'); $('resume').focus();
 };
+let TEMPLATES = [], lastTemplateJd = '';
+fetch('/templates.json').then((r) => r.json()).then(({ templates }) => {
+  TEMPLATES = templates; const groups = {};
+  templates.forEach((t) => (groups[t.group] ||= []).push(t));
+  $('template').innerHTML = '<option value="">Choose a template (optional)…</option>' + Object.entries(groups).map(([g, list]) => `<optgroup label="${esc(g)}">${list.map((t) => `<option value="${esc(t.id)}">${esc(t.title)}</option>`).join('')}</optgroup>`).join('');
+}).catch(() => $('template').closest('.field').classList.add('hidden'));
+$('template').onchange = () => {
+  const t = TEMPLATES.find((x) => x.id === $('template').value); if (!t) return;
+  const cur = $('jd').value.trim();
+  if (cur && cur !== lastTemplateJd && !confirm('Replace the job description with this template?')) { $('template').value = ''; return; }
+  $('role').value = t.role; $('jd').value = t.jd; lastTemplateJd = t.jd;
+  $('mode').value = t.mode; S.mode = t.mode; $('level').value = t.level; S.level = t.level;
+  saveDraft(); toast('Template applied — add your resume for personal questions, or just start');
+};
 $('consent').checked = store.get('consent') === '1';
 $('consent').onchange = () => store.set('consent', $('consent').checked ? '1' : '0');
 
 /* ---------- App shell: steps, outline, rubric ---------- */
+// Two headline scores derived from the five criteria (no extra model call):
+// Knowledge = does it answer the question with specific, valuable content; Communication = how well it is organised and delivered.
+const KC_PARTS = { knowledge: ['relevance', 'specificity', 'impact'], communication: ['structure', 'clarity'] };
+const kc = (sc) => Object.fromEntries(Object.entries(KC_PARTS).map(([k, keys]) => [k, +(keys.reduce((a, c) => a + sc[c], 0) / keys.length).toFixed(1)]));
+const loadJSON = (k, d) => { try { return JSON.parse(store.get(k) || JSON.stringify(d)); } catch { return d; } };
 const MODE_LABEL = { mixed: 'Mixed', behavioural: 'Behavioural', technical: 'Technical', system_design: 'System design' };
 const TITLES = { 1: 'New interview', 2: 'Interview', 3: 'Results' };
 function step(n) {
@@ -502,17 +532,20 @@ function renderOutline() {
 }
 
 function renderHistory() {
-  let h = []; try { h = JSON.parse(store.get('history') || '[]'); } catch {}
+  const h = loadJSON('history', []), reports = loadJSON('reports', {});
   $('setupLayout').classList.toggle('solo', !h.length);
   const el = $('history'); if (!h.length) { el.innerHTML = ''; return; }
-  const W = 300, H = 56, pts = h.map((x) => x.overall);
-  const xy = pts.map((v, i) => [pts.length === 1 ? W / 2 : (i * (W - 12)) / (pts.length - 1) + 6, H - 8 - ((v - 1) / 4) * (H - 16)]);
-  const trend = pts.length > 1 ? pts.at(-1) - pts[0] : 0;
-  el.innerHTML = `<div class="card hist"><div class="row"><h2>Progress</h2><span class="spacer"></span><span class="hint">${pts.length > 1 ? `${trend >= 0 ? '▲ +' : '▼ '}${trend.toFixed(1)}` : '1 session'}</span></div>
-    <svg class="spark" viewBox="0 0 ${W} ${H}" aria-label="Score trend"><polyline fill="none" stroke="var(--brand)" stroke-width="2.5" stroke-linejoin="round" points="${xy.map((q) => q.join(',')).join(' ')}"/>${xy.map((q) => `<circle cx="${q[0]}" cy="${q[1]}" r="3.5" fill="var(--brand)"/>`).join('')}</svg>
-    ${h.slice(-3).reverse().map((x) => `<div class="hrow"><span>${new Date(x.d).toLocaleDateString()} · ${esc(x.role)}</span><b>${x.overall}</b></div>`).join('')}
-    <div class="row" style="margin-top:8px"><span class="spacer"></span><button class="link" id="wipe" type="button">✕ Clear history</button></div></div>`;
-  $('wipe').onclick = () => { if (confirm('Remove your saved score history from this browser?')) { try { localStorage.removeItem('history'); } catch {} renderHistory(); toast('History cleared'); } };
+  const W = 300, H = 64, X = (i) => (h.length === 1 ? W / 2 : (i * (W - 12)) / (h.length - 1) + 6), Y = (v) => H - 8 - ((v - 1) / 4) * (H - 16);
+  const get = (x) => (x.knowledge != null ? { knowledge: x.knowledge, communication: x.communication } : x.scores ? kc(x.scores) : null);
+  const lines = [['knowledge', 'Knowledge', 'var(--brand)'], ['communication', 'Communication', 'var(--good)']].map(([key, name, color]) => ({ key, name, color, pts: h.map((x, i) => (get(x) ? [X(i), Y(get(x)[key])] : null)).filter(Boolean) }));
+  const latest = get(h.at(-1));
+  el.innerHTML = `<div class="card hist"><div class="row"><h2>Progress</h2><span class="spacer"></span><span class="hint">${h.length} session${h.length > 1 ? 's' : ''}</span></div>
+    <svg class="spark" viewBox="0 0 ${W} ${H}" aria-label="Knowledge and communication scores over time">${lines.map((l) => `${l.pts.length > 1 ? `<polyline fill="none" stroke="${l.color}" stroke-width="2.5" stroke-linejoin="round" points="${l.pts.map((q) => q.join(',')).join(' ')}"/>` : ''}${l.pts.map((q) => `<circle cx="${q[0]}" cy="${q[1]}" r="3.5" fill="${l.color}"/>`).join('')}`).join('')}</svg>
+    <div class="legend">${lines.map((l) => `<span><i style="background:${l.color}"></i>${l.name}${latest ? ' <b>' + latest[l.key] + '</b>' : ''}</span>`).join('')}</div>
+    ${h.slice(-5).reverse().map((x) => { const open = reports[x.d]; return `<${open ? 'button type="button" data-id="' + x.d + '"' : 'div'} class="hrow">${'<span>' + new Date(x.d).toLocaleDateString() + ' · ' + esc(x.role) + '</span><b>' + x.overall + '</b>'}</${open ? 'button' : 'div'}>`; }).join('')}
+    <div class="row" style="margin-top:8px"><span class="hint">Tap a session to reopen its report.</span><span class="spacer"></span><button class="link" id="wipe" type="button">✕ Clear history</button></div></div>`;
+  el.querySelectorAll('[data-id]').forEach((b) => (b.onclick = () => openSaved(b.dataset.id)));
+  $('wipe').onclick = () => { if (confirm('Remove your score history and saved reports from this browser?')) { try { localStorage.removeItem('history'); localStorage.removeItem('reports'); } catch {} renderHistory(); toast('History cleared'); } };
 }
 renderHistory();
 
@@ -535,7 +568,7 @@ $('drop').addEventListener('drop', (e) => uploadResume(e.dataTransfer.files[0]))
 
 $('startBtn').onclick = async () => {
   const resume = $('resume').value.trim(), jd = $('jd').value.trim(), role = $('role').value.trim();
-  const missing = [!resume && 'resume', !jd && 'job description', !role && 'target role'].filter(Boolean);
+  const missing = [!jd && 'job description (or pick a template)', !role && 'role'].filter(Boolean);
   if (missing.length) { $('setupErr').textContent = 'Still needed: ' + missing.join(', ') + '.'; return; }
   if (!$('consent').checked) { $('setupErr').textContent = 'Please tick the consent box to continue.'; return; }
   Object.assign(S, { role, resume, jd });
@@ -863,10 +896,10 @@ function bestTurns() {
   return [...best.values()];
 }
 function roundRect(g, x, y, w, h, r, fill) { g.beginPath(); g.roundRect ? g.roundRect(x, y, Math.max(w, 0.1), h, r) : g.rect(x, y, w, h); g.fillStyle = fill; g.fill(); }
-function scoreCard(overall, avgs) {
+function scoreCard(overall, avgs, role = S.role) {
   const c = document.createElement('canvas'); c.width = 1200; c.height = 630; const g = c.getContext('2d');
   const grad = g.createLinearGradient(0, 0, 1200, 630); grad.addColorStop(0, '#4f46e5'); grad.addColorStop(1, '#7c3aed'); g.fillStyle = grad; g.fillRect(0, 0, 1200, 630);
-  g.fillStyle = '#fff'; g.font = '600 32px system-ui, sans-serif'; g.fillText('Mock interview · ' + S.role, 60, 84);
+  g.fillStyle = '#fff'; g.font = '600 32px system-ui, sans-serif'; g.fillText('Mock interview · ' + role, 60, 84);
   g.font = '800 190px system-ui, sans-serif'; g.fillText(overall.toFixed(1), 60, 340);
   g.globalAlpha = .85; g.font = '500 38px system-ui, sans-serif'; g.fillText('out of 5 · ' + label(overall), 66, 404); g.globalAlpha = 1;
   S.criteria.forEach((cr, k) => { const y = 168 + k * 74; g.fillStyle = '#fff'; g.font = '500 27px system-ui, sans-serif'; g.textAlign = 'left'; g.fillText(cr.label, 560, y);
@@ -876,30 +909,57 @@ function scoreCard(overall, avgs) {
   return c;
 }
 
+// A report is a plain object, so it can be saved in the browser and reopened later exactly as it was shown.
+function reportMarkdown(rep) {
+  return `# Mock interview report — ${rep.role}\n\n**Overall: ${rep.overall}/5** · Knowledge ${rep.knowledge} · Communication ${rep.communication} — ${rep.headline}\n\n## Practise next\n${rep.priorities.map((x, i) => `${i + 1}. ${x}`).join('\n')}\n\n## Answers\n` + rep.turns.map((t) => `### ${t.question}\nScore: ${t.evaluation.overall}/5 — ${t.evaluation.summary}\n\n**Your answer:** ${t.answer}\n\n**${t.evaluation.improved_kind === 'outline' ? 'How you could answer' : 'Stronger version'}:** ${t.evaluation.improved_answer}\n`).join('\n');
+}
+function saveReport(rep) {
+  try {
+    const h = loadJSON('history', []); h.push({ d: rep.id, role: rep.role, overall: rep.overall, scores: rep.avgs, knowledge: rep.knowledge, communication: rep.communication, n: rep.turns.length });
+    store.set('history', JSON.stringify(h.slice(-20)));
+    const all = loadJSON('reports', {}); all[rep.id] = rep;
+    const keep = {}; Object.keys(all).map(Number).sort((a, b) => b - a).slice(0, 10).forEach((id) => (keep[id] = all[id])); // the 10 most recent full reports
+    store.set('reports', JSON.stringify(keep));
+  } catch {}
+}
+function renderReport(rep, { saved = false } = {}) {
+  const r = $('results'), T = rep.turns, when = new Date(rep.id).toLocaleDateString();
+  const weakest = S.criteria.map((c) => ({ c, v: rep.avgs[c.key] })).sort((a, b) => a.v - b.v)[0];
+  const kcard = (name, v, parts) => `<div class="kcard"><span>${name}</span><b class="${tone(v)}">${v}</b><small>${parts}</small></div>`;
+  r.innerHTML = `<div class="res-grid"><div class="card fb">${saved ? '<div class="backline"><button class="link" id="backBtn" type="button">← Back</button></div>' : ''}<div class="hero">${ring(rep.overall, 124)}<div class="verdict"><h2 style="font-size:22px;margin:0">${esc(rep.headline)}</h2><p class="muted" style="margin:4px 0 0">${T.length} answers · ${esc(rep.role)}${saved ? ' · ' + when : ''} · weakest: <b>${esc(weakest.c.label)}</b></p></div></div>
+    <div class="kc">${kcard('Knowledge', rep.knowledge, 'relevance · specificity · impact')}${kcard('Communication', rep.communication, 'structure · clarity')}</div>
+    ${bars((k) => rep.avgs[k])}
+    ${rep.strengths.length ? `<h3>Strengths</h3><ul class="clean">${rep.strengths.slice(0, 3).map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+    ${rep.priorities.length ? `<h3>Practise next</h3><ol class="clean">${rep.priorities.slice(0, 3).map((x) => `<li>${esc(x)}</li>`).join('')}</ol>` : ''}
+    <div class="row" style="margin-top:20px">${saved ? '<button class="primary" id="backBtn2" type="button">Start a new interview</button>' : '<button class="primary" onclick="location.reload()">Practise again</button>'}<button id="card">Score card</button><button id="dl">Download report</button></div></div>
+    <div class="res-side"><div class="card"><h2>Questions</h2>${T.map((t, i) => `<div class="qrow"><span>${t.isFollowUp ? '↳ ' : `<b>Q${T.slice(0, i + 1).filter((x) => !x.isFollowUp).length}.</b> `}${esc(t.question)}${t.attempts > 1 ? ` <span class="hint">(${t.attempts} attempts)</span>` : ''}</span><span class="pill ${tone(t.evaluation.overall)}">${t.evaluation.overall}</span></div>`).join('')}</div>
+    <details class="card t"><summary>Transcript &amp; rewrites</summary>${T.map((t) => `<h3>${t.isFollowUp ? 'Follow-up' : 'Question'}: ${esc(t.question)}</h3><p>${esc(t.answer)}</p><p class="muted"><b>${t.evaluation.improved_kind === 'outline' ? 'How you could answer' : 'Stronger version'}:</b> ${esc(t.evaluation.improved_answer)}</p>`).join('')}</details></div></div>`;
+  animate(r);
+  const back = () => { $('results').classList.add('hidden'); $('setup').classList.remove('hidden'); renderHistory(); step(1); };
+  if (saved) { $('backBtn').onclick = back; $('backBtn2').onclick = back; }
+  $('dl').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([reportMarkdown(rep)], { type: 'text/markdown' })); a.download = 'interview-report.md'; a.click(); };
+  $('card').onclick = () => { const a = document.createElement('a'); a.href = scoreCard(rep.overall, rep.avgs, rep.role).toDataURL('image/png'); a.download = 'interview-score.png'; a.click(); toast('Score card saved'); };
+}
+function openSaved(id) {
+  const rep = loadJSON('reports', {})[id];
+  if (!rep || !S.criteria.length) { toast('That report is no longer available'); return; }
+  $('setup').classList.add('hidden'); $('outline').innerHTML = ''; $('results').classList.remove('hidden'); step(3); renderReport(rep, { saved: true });
+}
+
 async function finish() {
   $('interview').classList.add('hidden'); $('live').classList.add('hidden'); step(3); const r = $('results'); r.classList.remove('hidden');
-  r.innerHTML = '<div class="card"><div class="loading"><div class="spinner"></div>Preparing your debrief…</div><div class="skel" style="width:60%"></div><div class="skel"></div></div>';
+  r.innerHTML = '<div class="card"><div class="loading"><div class="spinner"></div>Preparing your report…</div><div class="skel" style="width:60%"></div><div class="skel"></div></div>';
   const T = bestTurns();
   const avg = (k) => T.reduce((a, t) => a + t.evaluation.scores[k], 0) / T.length;
   const overall = Math.round((T.reduce((a, t) => a + t.evaluation.overall, 0) / T.length) * 10) / 10;
   const avgs = Object.fromEntries(S.criteria.map((c) => [c.key, Math.round(avg(c.key) * 10) / 10]));
-  try { const h = JSON.parse(store.get('history') || '[]'); h.push({ d: Date.now(), role: S.role, overall, scores: avgs, n: T.length }); store.set('history', JSON.stringify(h.slice(-20))); } catch {}
   let d; try { d = await api('/api/summary', { role: S.role, turns: T.map((t) => ({ question: t.question, isFollowUp: t.isFollowUp, evaluation: { scores: t.evaluation.scores, summary: t.evaluation.summary } })) }); }
-  catch (e) { d = { headline: 'Interview complete', top_strengths: [], top_priorities: [], practice_plan: 'The written debrief is unavailable right now — your scores are below.' }; }
-  const weakest = S.criteria.map((c) => ({ c, v: avg(c.key) })).sort((a, b) => a.v - b.v)[0];
+  catch (e) { d = { headline: 'Interview complete', top_strengths: [], top_priorities: [], practice_plan: '' }; }
   const attempts = (t) => S.turns.filter((x) => x.qkey === t.qkey).length;
-  r.innerHTML = `<div class="res-grid"><div class="card fb"><div class="hero">${ring(overall, 124)}<div class="verdict"><h2 style="font-size:22px;margin:0">${esc(d.headline)}</h2><p class="muted" style="margin:4px 0 0">${T.length} answers · weakest: <b>${esc(weakest.c.label)}</b></p></div></div>
-    ${bars((k) => avgs[k])}
-    ${d.top_strengths.length ? `<h3>Strengths</h3><ul class="clean">${d.top_strengths.slice(0, 3).map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
-    ${d.top_priorities.length ? `<h3>Practise next</h3><ol class="clean">${d.top_priorities.slice(0, 3).map((x) => `<li>${esc(x)}</li>`).join('')}</ol>` : ''}
-    <div class="row" style="margin-top:20px"><button class="primary" onclick="location.reload()">Practise again</button><button id="card">Score card</button><button id="dl">Download report</button></div></div>
-    <div class="res-side"><div class="card"><h2>Questions</h2>${T.map((t, i) => `<div class="qrow"><span>${t.isFollowUp ? '↳ ' : `<b>Q${T.slice(0, i + 1).filter((x) => !x.isFollowUp).length}.</b> `}${esc(t.question)}${attempts(t) > 1 ? ` <span class="hint">(${attempts(t)} attempts)</span>` : ''}</span><span class="pill ${tone(t.evaluation.overall)}">${t.evaluation.overall}</span></div>`).join('')}</div>
-    <details class="card t"><summary>Transcript &amp; rewrites</summary>${T.map((t) => `<h3>${t.isFollowUp ? 'Follow-up' : 'Question'}: ${esc(t.question)}</h3><p>${esc(t.answer)}</p><p class="muted"><b>Stronger version:</b> ${esc(t.evaluation.improved_answer)}</p>`).join('')}</details></div></div>`;
-  renderOutline();
-  animate(r);
-  const md = `# Mock interview report — ${S.role}\n\n**Overall: ${overall}/5** — ${d.headline}\n\n## Practise next\n${d.top_priorities.map((x, i) => `${i + 1}. ${x}`).join('\n')}\n\n## Answers\n` + T.map((t) => `### ${t.question}\nScore: ${t.evaluation.overall}/5 — ${t.evaluation.summary}\n\n**Your answer:** ${t.answer}\n\n**Stronger version:** ${t.evaluation.improved_answer}\n`).join('\n');
-  $('dl').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([md], { type: 'text/markdown' })); a.download = 'interview-report.md'; a.click(); };
-  $('card').onclick = () => { const a = document.createElement('a'); a.href = scoreCard(overall, avgs).toDataURL('image/png'); a.download = 'interview-score.png'; a.click(); toast('Score card saved'); };
+  const slim = ({ facts_used, ...ev }) => ev; // the saved copy doesn't need the rewrite's working notes
+  const rep = { id: Date.now(), role: S.role, mode: S.mode, level: S.level, format: S.format, overall, avgs, ...kc(avgs), headline: d.headline, strengths: d.top_strengths, priorities: d.top_priorities,
+    turns: T.map((t) => ({ question: t.question, answer: t.answer, isFollowUp: t.isFollowUp, attempts: attempts(t), delivery: t.delivery, flags: t.flags, evaluation: slim(t.evaluation) })) };
+  saveReport(rep); renderReport(rep); renderOutline();
 }
 $('howBtn').onclick = () => $('howDlg').showModal();
 $('howClose').onclick = () => $('howDlg').close();

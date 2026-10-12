@@ -110,3 +110,12 @@ test('a non-answer gets an outline from the resume (not a fake answer) and a sin
   const real = await (await post('/api/answer', { ...ctx, question: 'Q?', answer: 'I moved the connection step later and ran a three week test and activation rose to 44 percent for all customers' }, { 'x-forwarded-for': '10.0.0.30' })).json();
   assert.equal(real.evaluation.improved_kind, 'rewrite');
 });
+
+test('a resume is optional: template-style practice starts and scores without one', async () => {
+  const h = { 'x-forwarded-for': '10.0.0.40' };
+  const start = await post('/api/start', { jd: 'Backend Developer: Python, SQL, APIs.', role: 'Backend Developer', count: 3 }, h);
+  assert.equal(start.status, 200); assert.equal((await start.json()).questions.length, 3);
+  const ans = await post('/api/answer', { jd: 'Backend Developer: Python, SQL, APIs.', role: 'Backend Developer', question: 'Explain an index.', answer: 'An index speeds up reads on a column but slows writes because it must be updated, so I check the query plan before adding one.' }, h);
+  assert.equal(ans.status, 200);
+  assert.equal((await post('/api/start', { role: 'PM' }, h)).status, 400, 'job description is still required');
+});

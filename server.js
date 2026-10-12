@@ -93,10 +93,10 @@ app.post('/api/resume', upload.single('resume'), async (req, res) => {
 
 app.post('/api/start', wrap(async ({ body }) => {
   const { resume, jd, role, count, mode, difficulty } = body;
-  need(resume && jd && role, 'resume, jd and role are required');
-  tooLong('Resume', resume, LIMITS.resume); tooLong('Job description', jd, LIMITS.jd); tooLong('Role', role, LIMITS.role);
+  need(jd && role, 'job description and role are required (the resume is optional)');
+  tooLong('Resume', resume || '', LIMITS.resume); tooLong('Job description', jd, LIMITS.jd); tooLong('Role', role, LIMITS.role);
   const plan = await planQuestions({
-    resume: redactPII(resume), jd: redactPII(jd), role,
+    resume: redactPII(resume || ''), jd: redactPII(jd), role,
     count: Math.min(Math.max(+count || 5, 3), 8),
     mode: ['mixed', 'behavioural', 'technical', 'system_design'].includes(mode) ? mode : 'mixed',
     difficulty: difficulty === 'tough' ? 'tough' : 'standard',

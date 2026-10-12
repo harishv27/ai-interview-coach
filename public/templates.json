@@ -1,0 +1,43 @@
+{
+  "note": "Unofficial practice templates written for this project. They are not affiliated with any company and do not reproduce any company's real interview.",
+  "templates": [
+    { "id": "ai-engineer", "group": "Role", "title": "AI Engineer", "role": "AI Engineer", "mode": "mixed", "level": "standard",
+      "jd": "AI Engineer. Build and ship LLM-powered features: retrieval pipelines (RAG), prompt and tool design, evaluation harnesses and monitoring. Own services in production on a cloud platform. Requirements: strong Python, experience with APIs and databases, hands-on LLM application work, testing and evaluation habits, clear communication with product and design." },
+    { "id": "ml-engineer", "group": "Role", "title": "Machine Learning Engineer", "role": "ML Engineer", "mode": "technical", "level": "standard",
+      "jd": "Machine Learning Engineer. Train, evaluate and deploy models. Build data and feature pipelines, track experiments, monitor drift and quality in production. Requirements: Python, scikit-learn or PyTorch, solid statistics and model-evaluation fundamentals, SQL, experience shipping models behind an API." },
+    { "id": "sde-generalist", "group": "Role", "title": "Software Engineer (SDE)", "role": "Software Engineer (SDE)", "mode": "mixed", "level": "standard",
+      "jd": "Software Engineer. Design, build and maintain services and features. Write clean, tested code, review others' work and take part in on-call. Requirements: data structures and algorithms fundamentals, one backend language, SQL and API design, version control and testing, ability to explain trade-offs." },
+    { "id": "backend-python", "group": "Role", "title": "Backend Developer (Python)", "role": "Backend Developer", "mode": "technical", "level": "standard",
+      "jd": "Backend Developer using Python. Build REST APIs and background jobs, model data in PostgreSQL, add caching and queues, and keep services reliable. Requirements: FastAPI, Django or Flask, SQL tuning, async or worker-based processing, Docker, logging and monitoring." },
+    { "id": "backend-java", "group": "Role", "title": "Backend Developer (Java)", "role": "Backend Developer", "mode": "technical", "level": "standard",
+      "jd": "Backend Developer using Java. Build Spring Boot microservices, design REST and messaging interfaces, work with relational databases and keep systems observable. Requirements: Java collections and concurrency, Spring, JPA or SQL, unit and integration testing, basic cloud and CI/CD knowledge." },
+    { "id": "frontend-react", "group": "Role", "title": "Frontend Developer (React)", "role": "Frontend Developer", "mode": "technical", "level": "standard",
+      "jd": "Frontend Developer using React. Build accessible, fast interfaces, manage state and data fetching, and work with designers and backend engineers. Requirements: JavaScript or TypeScript, React hooks and rendering behaviour, CSS layout, browser performance basics, testing, accessibility." },
+    { "id": "fullstack", "group": "Role", "title": "Full-Stack Developer", "role": "Full-Stack Developer", "mode": "mixed", "level": "standard",
+      "jd": "Full-Stack Developer. Own features from database to user interface. Requirements: JavaScript or TypeScript on both ends, a web framework, SQL or document databases, authentication and API design, deployment basics, and the ability to balance speed with quality." },
+    { "id": "data-engineer", "group": "Role", "title": "Data Engineer", "role": "Data Engineer", "mode": "technical", "level": "standard",
+      "jd": "Data Engineer. Build reliable batch and streaming pipelines, model warehouse tables and keep data quality high. Requirements: SQL, Python, an orchestrator such as Airflow, warehouse concepts, incremental loads and idempotency, monitoring and data testing." },
+    { "id": "devops-sre", "group": "Role", "title": "DevOps / SRE", "role": "DevOps / SRE", "mode": "mixed", "level": "standard",
+      "jd": "DevOps or Site Reliability Engineer. Automate delivery, run services reliably and respond to incidents. Requirements: Linux, containers and Kubernetes basics, CI/CD, infrastructure as code, monitoring and alerting, incident handling and post-mortems." },
+
+    { "id": "round-campus", "group": "Round style", "title": "Campus round: IT services company (fresher)", "role": "Software Engineer (SDE)", "mode": "mixed", "level": "standard",
+      "jd": "Entry-level software role in an IT services company. Expect questions on programming fundamentals, object-oriented concepts, basic SQL, your final-year or internship project, and teamwork. Requirements: any one programming language, data structures basics, willingness to learn, clear communication. (Unofficial practice round.)" },
+    { "id": "round-startup", "group": "Round style", "title": "Product-startup engineering round", "role": "Software Engineer (SDE)", "mode": "mixed", "level": "tough",
+      "jd": "Engineer at an early-stage product startup. Expect questions on shipping quickly with limited resources, owning problems end to end, making trade-offs, debugging production issues and working directly with founders. Requirements: strong in one stack, comfortable with ambiguity, evidence of building and shipping real projects. (Unofficial practice round.)" },
+    { "id": "round-bigtech", "group": "Round style", "title": "Large-tech style: fundamentals + design", "role": "Software Engineer (SDE)", "mode": "system_design", "level": "tough",
+      "jd": "Software engineer at a large technology company. Expect probing questions on data structures and complexity, system design at scale, handling failure, and collaboration at scale. Requirements: strong fundamentals, ability to reason about trade-offs aloud, structured communication. (Unofficial practice round.)" },
+    { "id": "round-internship", "group": "Round style", "title": "Internship interview (engineering)", "role": "Software Engineer (SDE)", "mode": "behavioural", "level": "standard",
+      "jd": "Engineering intern. Expect questions about your projects, what you learned, how you work in a team, how you handle deadlines and feedback, and why you want this internship. Requirements: curiosity, one or two real projects, basic programming skills, communication and reliability." },
+
+    { "id": "skill-python", "group": "Skill", "title": "Python fundamentals", "role": "Backend Developer", "mode": "technical", "level": "standard",
+      "jd": "Role focused on Python. Expect questions on data types and mutability, comprehensions and generators, decorators, exceptions, the GIL and concurrency, virtual environments and packaging, and writing testable code." },
+    { "id": "skill-sql", "group": "Skill", "title": "SQL and databases", "role": "Data Engineer", "mode": "technical", "level": "standard",
+      "jd": "Role focused on SQL and databases. Expect questions on joins, aggregation and window functions, indexing and query plans, transactions and isolation, normalisation versus denormalisation, and diagnosing a slow query." },
+    { "id": "skill-llm-rag", "group": "Skill", "title": "LLM applications and RAG", "role": "AI Engineer", "mode": "technical", "level": "standard",
+      "jd": "Role focused on LLM applications. Expect questions on retrieval-augmented generation, chunking and embeddings, reranking, evaluating answer quality and faithfulness, prompt injection and safety, latency and cost control, and monitoring in production." },
+    { "id": "skill-system-design", "group": "Skill", "title": "System design basics", "role": "Software Engineer (SDE)", "mode": "system_design", "level": "standard",
+      "jd": "Role with a system-design round. Expect to clarify requirements, estimate scale, choose storage and APIs, add caching and queues, discuss consistency and availability, and explain trade-offs and failure handling for a familiar product such as a URL shortener or chat service." },
+    { "id": "skill-testing-git", "group": "Skill", "title": "Testing, Git and code quality", "role": "Software Engineer (SDE)", "mode": "behavioural", "level": "standard",
+      "jd": "Role that values engineering practice. Expect questions on writing and structuring tests, handling flaky tests, code review habits, branching and merge conflicts, refactoring safely and keeping a codebase maintainable." }
+  ]
+}

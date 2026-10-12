@@ -34,3 +34,17 @@ test('phone redaction still catches real numbers and leaves ordinary numbers alo
   const keep = 'cut latency from 2800ms to 1100ms for 3,000 merchants, a 70% drop in 2021-2023 and 12345';
   assert.equal(redactPII(keep), keep);
 });
+
+import { readFileSync } from 'node:fs';
+test('interview templates are well-formed and only use options the app supports', () => {
+  const { templates } = JSON.parse(readFileSync(new URL('../public/templates.json', import.meta.url), 'utf8'));
+  const ids = templates.map((t) => t.id);
+  assert.equal(new Set(ids).size, ids.length, 'ids must be unique');
+  assert.ok(templates.length >= 12);
+  for (const t of templates) {
+    assert.ok(['Role', 'Round style', 'Skill'].includes(t.group), t.id);
+    assert.ok(['mixed', 'behavioural', 'technical', 'system_design'].includes(t.mode), t.id + ' mode');
+    assert.ok(['standard', 'tough'].includes(t.level), t.id + ' level');
+    assert.ok(t.title && t.role && t.jd.length >= 120 && t.jd.length <= 1200, t.id + ' text');
+  }
+});
